@@ -3,6 +3,8 @@ package com.mycosmetic.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mycosmetic.config.SecurityConfig;
 import com.mycosmetic.dto.response.LoginResponse;
+import com.mycosmetic.security.JwtUtil;
+import com.mycosmetic.security.UserDetailsServiceImpl;
 import com.mycosmetic.service.AuthService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,6 +36,12 @@ class AuthControllerTest {
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private JwtUtil jwtUtil;
+
+    @MockitoBean
+    private UserDetailsServiceImpl userDetailsService;
 
     // ── 회원가입 ──────────────────────────────────────────────────────
 

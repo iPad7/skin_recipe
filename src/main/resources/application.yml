@@ -27,7 +27,10 @@ jwt:
   expiration: 86400000  # 24시간 (ms)
 
 upstage:
-  api-key: ${UPSTAGE_API_KEY}
+  api-key: ${UPSTAGE_API_KEY:test-api-key}
+  model:
+    llm: solar-pro3-260323
+    document-parse: document-parse-260128
 
 file:
   upload-dir: ./uploads

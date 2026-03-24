@@ -1,0 +1,101 @@
+### 1. 회원가입
+POST http://localhost:8080/auth/signup
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "password123",
+  "nickname": "테스터",
+  "skinType": "NORMAL",
+  "skinConcerns": "ACNE,MOISTURE",
+  "allergyIngredients": "향료, 알코올"
+}
+
+---
+
+### 2. 로그인 (응답의 accessToken을 아래 {{token}}에 붙여넣기)
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+---
+
+### 3-1. OCR 테스트 — product1
+POST http://localhost:8080/cosmetics/ocr
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNzc0MzYxODE2LCJleHAiOjE3NzQ0NDgyMTZ9.AMo7U7qbxtxpDzUXwxAMTwlIVKItBCnY9NJVjkSY3Uli9jRUWhg7MGWuPyeUWDCZ
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="frontImage"; filename="product1_front.jpg"
+Content-Type: image/jpeg
+
+< /home/jaeboem/projects/skin_recipe/test-images/product1_front.jpg
+--boundary
+Content-Disposition: form-data; name="backImage"; filename="product1_back.jpg"
+Content-Type: image/jpeg
+
+< /home/jaeboem/projects/skin_recipe/test-images/product1_back.jpg
+--boundary--
+
+---
+
+### 3-2. OCR 테스트 — product2
+POST http://localhost:8080/cosmetics/ocr
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNzc0MzYxODE2LCJleHAiOjE3NzQ0NDgyMTZ9.AMo7U7qbxtxpDzUXwxAMTwlIVKItBCnY9NJVjkSY3Uli9jRUWhg7MGWuPyeUWDCZ
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="frontImage"; filename="product2_front.jpg"
+Content-Type: image/jpeg
+
+< /home/jaeboem/projects/skin_recipe/test-images/product2_front.jpg
+--boundary
+Content-Disposition: form-data; name="backImage"; filename="product2_back.jpg"
+Content-Type: image/jpeg
+
+< /home/jaeboem/projects/skin_recipe/test-images/product2_back.jpg
+--boundary--
+
+---
+
+### 3-3. OCR 테스트 — product3
+POST http://localhost:8080/cosmetics/ocr
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNzc0MzYxODE2LCJleHAiOjE3NzQ0NDgyMTZ9.AMo7U7qbxtxpDzUXwxAMTwlIVKItBCnY9NJVjkSY3Uli9jRUWhg7MGWuPyeUWDCZ
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="frontImage"; filename="product3_front.jpg"
+Content-Type: image/jpeg
+
+< /home/jaeboem/projects/skin_recipe/test-images/product3_front.jpg
+--boundary
+Content-Disposition: form-data; name="backImage"; filename="product3_back.jpg"
+Content-Type: image/jpeg
+
+< /home/jaeboem/projects/skin_recipe/test-images/product3_back.jpg
+--boundary--
+
+---
+
+### 3-4. OCR HITL 확인 저장 — product1 (low confidence 수동 저장)
+POST http://localhost:8080/cosmetics/ocr/confirm
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNzc0MzYxODE2LCJleHAiOjE3NzQ0NDgyMTZ9.AMo7U7qbxtxpDzUXwxAMTwlIVKItBCnY9NJVjkSY3Uli9jRUWhg7MGWuPyeUWDCZ
+Content-Type: application/json
+
+{
+  "name": "HOUTTUYNIA CORDATA CALMING MOISTURE SUN CREAM SPF 50+ PA++++",
+  "brand": "goodal",
+  "category": "SUNSCREEN",
+  "ingredients": "정제수, 다이부틸아디페이트, 프로판다이올, ...",
+  "imageUrl": "/uploads/product1_front.jpg"
+}
+
+---
+
+### 4. 화장품 목록 조회
+GET http://localhost:8080/cosmetics
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNzc0MzYxODE2LCJleHAiOjE3NzQ0NDgyMTZ9.AMo7U7qbxtxpDzUXwxAMTwlIVKItBCnY9NJVjkSY3Uli9jRUWhg7MGWuPyeUWDCZ

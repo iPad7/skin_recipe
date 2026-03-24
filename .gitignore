@@ -39,5 +39,6 @@ out/
 ### Project ###
 uploads/*
 !uploads/.gitkeep
+test-images/
 application-local.yml
 *.env
