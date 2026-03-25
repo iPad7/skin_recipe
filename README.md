@@ -6,6 +6,10 @@
 
 ## 동작 흐름
 
+### OCR 등록 파이프라인
+
+![OCR Pipeline](docs/sequence-ocr.png)
+
 ```
 화장품 앞/뒤 사진 촬영
         ↓
@@ -17,12 +21,16 @@ high → 자동 저장 + 벡터화
 low  → 사용자 확인 후 저장 (HITL)
 ```
 
+### RAG 챗봇 파이프라인
+
+![RAG Chatbot](docs/sequence-rag.png)
+
 ```
 세션 생성 → 챗봇 질문 입력
                 ↓
 Upstage Embedding API → 질문 벡터화
                 ↓
-인메모리 벡터 검색 → 관련 화장품 3개 조회
+인메모리 벡터 검색 → 관련 화장품 5개 조회
                 ↓
 ChatService → 시스템 프롬프트 조립
               (피부타입 + 고민 + 알레르기 + 관련 화장품 성분)
@@ -51,6 +59,14 @@ Solar LLM 호출 (세션 내 최근 10개 메시지 히스토리 포함)
 | Frontend | React + Vite | 순수 CSS, SPA |
 | 프론트 배포 | Vercel | |
 | 백엔드 배포 | AWS EC2 t2.micro | |
+
+## 아키텍처
+
+![Architecture](docs/architecture.png)
+
+## 데이터 모델 (ERD)
+
+![ERD](docs/ERD.png)
 
 ## 아키텍처 핵심
 
@@ -100,7 +116,7 @@ export UPSTAGE_API_KEY=your_api_key_here
 | 6 | React 프론트엔드 개발 + 백엔드 연동 | ⬜ |
 | 7 | 배포 — EC2 + RDS + Vercel | ⬜ |
 | 8 | 인수 테스트 — 전체 사용자 흐름 검증 | ⬜ |
-| 9 | 마무리 — README 최종본 + GitHub 제출 | ⬜ |
+| 9 | 마무리 — 문서 작업 | ⬜ |
 
 ## 향후 개선 계획
 

@@ -36,6 +36,9 @@ out/
 ### VS Code ###
 .vscode/
 
+### Diagram sources (PNG exports committed instead) ###
+*.excalidraw
+
 ### Project ###
 uploads/*
 !uploads/.gitkeep

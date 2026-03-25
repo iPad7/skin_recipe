@@ -535,7 +535,7 @@ String chat(String systemPrompt, List<ChatMessage> history, String userMessage)
 **작업 내용:**
 - 전체 엔드포인트 Request / Response 스펙 정리
 - 인증 방식 (Bearer JWT) 명시
-- 에러 응답 형식 정리
+- 에러 응답 포맷 섹션 명시 (`{ "message": "..." }`, 400/401/404/500 케이스)
 
 **생성 파일:**
 - `docs/api-spec.md`
