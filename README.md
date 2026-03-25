@@ -39,15 +39,18 @@ Solar LLM 호출 (세션 내 최근 10개 메시지 히스토리 포함)
 | Language | Java 21 | |
 | Framework | Spring Boot 3.5 | MVC, Security |
 | ORM | Spring Data JPA | Repository 패턴 |
-| DB | MySQL 8 | Docker, SOT |
+| DB | MySQL 8 | Docker (로컬) / RDS t3.micro (프로덕션) |
 | 인증 | Spring Security + JWT | jjwt 0.12 |
 | 빌드 | Gradle | |
 | OCR | Upstage Document Parse | ocr=force |
-| LLM | Upstage Solar | solar-pro |
-| Embedding | Upstage Embedding API | solar-embedding-1-large |
+| LLM | Upstage Solar | solar-pro3-260323 |
+| Embedding | Upstage Embedding API | solar-embedding-1-large-passage/query |
 | Vector Store | InMemory (ConcurrentHashMap) | 전략 패턴, pgvector 확장 예정 |
 | HTTP Client | WebClient | 비동기 외부 API 호출 |
 | 이미지 저장 | 로컬 + Docker volume | OCR 로그 보관용 |
+| Frontend | React + Vite | 순수 CSS, SPA |
+| 프론트 배포 | Vercel | |
+| 백엔드 배포 | AWS EC2 t2.micro | |
 
 ## 아키텍처 핵심
 
@@ -87,16 +90,21 @@ export UPSTAGE_API_KEY=your_api_key_here
 
 ## 개발 일정
 
-| Phase | 주요 작업                                                      | 목표                              |
-|:-----:|----------------------------------------------------------------|-----------------------------------|
-|   1   | 프로젝트 세팅 + User CRUD + JWT                                | 회원 CRUD API 완성, DB 저장 확인  |
-|   2   | Spring Security 설정 + Cosmetic CRUD + OCR 연동                | JWT 완성 + 사진 OCR 파싱 확인     |
-|   3   | HITL 분기 + Routine CRUD + VectorStoreService + InMemory 구현  | OCR→HITL→DB→벡터 전체 파이프라인 |
-|   4   | RAG 챗봇 (세션 CRUD + Embedding + 벡터 검색 + Solar)           | 세션 기반 RAG 챗봇 동작 확인      |
-|   5   | 전체 테스트 + README + ERD + GitHub 제출                       | 최종 제출 완료                    |
+| Phase | 주요 작업 | 상태 |
+|:-----:|-----------|:----:|
+| 1 | 프로젝트 세팅 + User 엔티티 + JWT 인증 | ✅ |
+| 2 | Spring Security + Cosmetic CRUD + OCR 연동 | ✅ |
+| 3 | HITL + Routine + VectorStoreService (InMemory) | ✅ |
+| 4 | RAG 챗봇 (ChatSession + Embedding + Solar LLM) | ✅ |
+| 5 | 중간 결산 — ERD + API 정의서 | 🔄 |
+| 6 | React 프론트엔드 개발 + 백엔드 연동 | ⬜ |
+| 7 | 배포 — EC2 + RDS + Vercel | ⬜ |
+| 8 | 인수 테스트 — 전체 사용자 흐름 검증 | ⬜ |
+| 9 | 마무리 — README 최종본 + GitHub 제출 | ⬜ |
 
 ## 향후 개선 계획
 
 - 인메모리 벡터 → pgvector 마이그레이션
 - 이미지 저장 → S3 또는 외부 스토리지
 - RAG 고도화 (Chunking, Reranking)
+- 표준 성분 DB 연동

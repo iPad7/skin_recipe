@@ -147,13 +147,16 @@ Vector Store  ← DB 테이블 없음
 | Language | Java 21 |
 | Framework | Spring Boot 3.5 |
 | ORM | Spring Data JPA |
-| DB | MySQL 8 (Docker) |
+| DB | MySQL 8 (Docker / RDS t3.micro) |
 | 인증 | Spring Security + JWT (jjwt 0.12) |
 | OCR | Upstage Document Parse |
-| LLM | Upstage Solar (solar-pro) |
-| Embedding | Upstage Embedding API |
+| LLM | Upstage Solar (solar-pro3-260323) |
+| Embedding | Upstage Embedding API (passage/query 분리) |
 | Vector Store | InMemory → pgvector (전략 패턴) |
 | HTTP Client | WebClient |
+| Frontend | React + Vite (순수 CSS) |
+| 프론트 배포 | Vercel |
+| 백엔드 배포 | AWS EC2 t2.micro |
 
 ---
 

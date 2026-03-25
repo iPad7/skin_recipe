@@ -508,36 +508,185 @@ String chat(String systemPrompt, List<ChatMessage> history, String userMessage)
 
 ---
 
-## Phase 5 — 마무리
+## Phase 5 — 중간 결산
+
+> 프론트엔드 개발 전 백엔드 완성 시점의 문서 정리. README 최종본은 Phase 9에서 완성.
 
 ---
 
-### T5-1. 통합 테스트 작성
-
-**목표:** 핵심 API 흐름을 실제 DB와 함께 검증
-
-**작업 내용:**
-- `AuthControllerTest`: 회원가입 / 로그인 / 중복 이메일 처리
-- `CosmeticControllerTest`: CRUD + 소유자 검증
-- `ChatServiceTest`: RAG 파이프라인 단위 테스트 (LLM 호출은 Mock)
-
----
-
-### T5-2. ERD 정리
+### T5-1. ERD 정리
 
 **목표:** 최종 DB 스키마를 ERD로 문서화
 
 **작업 내용:**
-- `docs/erd.md` 또는 Excalidraw로 User / Cosmetic / Routine / RoutineCosmetic / ChatMessage 관계 작성
+- `docs/erd.md`에 Mermaid 다이어그램으로 작성 (GitHub 렌더링용)
+- dbdiagram.io용 DBML 코드 함께 제공
+- 대상 엔티티: User / Cosmetic / Routine / RoutineCosmetic / ChatSession / ChatMessage
+
+**생성 파일:**
+- `docs/erd.md`
 
 ---
 
-### T5-3. README + GitHub 제출
+### T5-2. API 정의서 작성
 
-**목표:** 프로젝트 실행 방법과 기능 설명을 README에 최종 정리
+**목표:** 프론트엔드 개발 시 참조할 API 명세 문서화
 
 **작업 내용:**
-- 실행 방법 (Docker MySQL, 환경변수, `./gradlew bootRun`)
+- 전체 엔드포인트 Request / Response 스펙 정리
+- 인증 방식 (Bearer JWT) 명시
+- 에러 응답 형식 정리
+
+**생성 파일:**
+- `docs/api-spec.md`
+
+---
+
+## Phase 6 — 프론트엔드
+
+> React + Vite 기반 SPA. 백엔드 API 연동 포함. 위치: `frontend/`
+
+---
+
+### T6-1. React + Vite 프로젝트 세팅
+
+**목표:** 프론트엔드 프로젝트 초기 구성 및 백엔드 연동 환경 설정
+
+**작업 내용:**
+- `frontend/` 디렉토리에 Vite + React 프로젝트 생성
+- axios 또는 fetch 기반 API 클라이언트 설정
+- JWT 토큰 localStorage 관리
+- 라우팅 설정 (react-router-dom)
+- 백엔드 CORS 설정 추가
+
+---
+
+### T6-2. 회원가입 / 로그인 페이지
+
+**목표:** 인증 흐름 구현
+
+**작업 내용:**
+- 회원가입 폼 (이메일, 비밀번호, 닉네임, 피부타입, 피부고민, 알레르기 성분)
+- 로그인 폼 → JWT 저장 → 메인 페이지 이동
+- 인증 필요 페이지 접근 시 로그인 페이지로 리다이렉트
+
+---
+
+### T6-3. 화장품 관리 페이지
+
+**목표:** 화장품 목록 조회, 수동 등록, OCR 등록, 수정, 삭제
+
+**작업 내용:**
+- 화장품 목록 카드 UI
+- 수동 등록 폼
+- OCR 등록: 카메라/파일 업로드 → 앞면·뒷면 2장 → 결과 확인 (HITL 포함)
+- 수정 / 삭제
+
+---
+
+### T6-4. 루틴 페이지
+
+**목표:** AM/PM 루틴 생성, 조회, 삭제
+
+**작업 내용:**
+- AM / PM 탭 구분
+- 루틴 생성 버튼 → LLM 추천 결과 표시
+- 루틴 카드 (제품 순서, 설명)
+- 삭제
+
+---
+
+### T6-5. 챗봇 페이지
+
+**목표:** 세션 기반 RAG 챗봇 UI
+
+**작업 내용:**
+- 세션 목록 사이드바 (생성 / 선택 / 삭제)
+- 채팅 인터페이스 (메시지 입력 → 전송 → AI 응답 표시)
+- 히스토리 로드
+
+---
+
+## Phase 7 — 배포
+
+---
+
+### T7-1. RDS MySQL 설정
+
+**목표:** AWS RDS t3.micro (프리티어) MySQL 인스턴스 생성
+
+**작업 내용:**
+- RDS 인스턴스 생성 (MySQL 8, t3.micro)
+- 보안 그룹 설정 (EC2에서만 접근 허용)
+- `application-prod.yml` 작성
+
+---
+
+### T7-2. EC2 배포 — Spring Boot
+
+**목표:** EC2 t2.micro에 Spring Boot 서버 배포
+
+**작업 내용:**
+- EC2 인스턴스 생성 (Amazon Linux 2, t2.micro)
+- Java 21 설치
+- JAR 빌드 + 업로드 + 실행 (systemd 서비스 등록)
+- 환경변수 설정 (`UPSTAGE_API_KEY` 등)
+- 보안 그룹 설정 (8080 포트 오픈)
+
+---
+
+### T7-3. Vercel 배포 — React
+
+**목표:** Vercel에 React 프론트엔드 배포
+
+**작업 내용:**
+- Vercel 프로젝트 연결 (GitHub 레포 `frontend/` 루트 지정)
+- 환경변수 설정 (`VITE_API_BASE_URL` = EC2 주소)
+- 프로덕션 CORS 설정 (백엔드에 Vercel 도메인 허용)
+
+---
+
+## Phase 8 — 인수 테스트
+
+---
+
+### T8-1. 전체 사용자 흐름 검증
+
+**목표:** 배포된 환경에서 실제 사용자 흐름 전체를 수동으로 검증
+
+**작업 내용:**
+- 회원가입 → 로그인
+- 화장품 OCR 등록 (카메라 촬영)
+- HITL 확인 저장
+- 루틴 생성 (AM/PM)
+- 챗봇 대화 (RAG 응답 확인)
+- 세션 삭제 / 화장품 삭제 (cascade 확인)
+
+---
+
+## Phase 9 — 마무리
+
+---
+
+### T9-1. README 최종본
+
+**목표:** 배포 URL 포함 최종 README 작성
+
+**작업 내용:**
+- 프로젝트 소개 + 동작 흐름
+- 기술 스택 (프론트엔드 포함)
+- 실행 방법 (로컬 + 배포)
 - API 엔드포인트 목록
 - 아키텍처 핵심 설명 (SOT 분리, 전략 패턴, RAG)
-- GitHub 제출
+- 개발 일정 (Phase 1~9)
+
+---
+
+### T9-2. GitHub 최종 제출
+
+**목표:** 레포 정리 후 부트캠프 지원서에 제출
+
+**작업 내용:**
+- 불필요한 파일 정리 (.idea 등 .gitignore 확인)
+- 최종 커밋 + 태그
+- GitHub 레포 public 확인

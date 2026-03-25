@@ -16,6 +16,8 @@
 ./gradlew test --tests "com.mycosmetic.service.FileStorageServiceTest"
 ./gradlew test --tests "com.mycosmetic.service.InMemoryVectorStoreServiceTest"
 ./gradlew test --tests "com.mycosmetic.service.RoutineServiceTest"
+./gradlew test --tests "com.mycosmetic.service.ChatServiceTest"
+./gradlew test --tests "com.mycosmetic.controller.ChatControllerTest"
 
 # 캐시 무시하고 강제 재실행
 ./gradlew test --rerun
@@ -134,6 +136,28 @@ open build/reports/tests/test/index.html
 
 ---
 
+#### `ChatServiceTest`
+**위치:** `src/test/java/com/mycosmetic/service/ChatServiceTest.java`
+**Mock:** `ChatSessionRepository`, `ChatMessageRepository`, `UserRepository`, `InMemoryVectorStoreService`, `CosmeticRepository`, `UpstageEmbeddingClient`, `UpstageLlmClient`
+**목적:** 세션 CRUD, RAG 파이프라인, 히스토리 제한, 소유자 검증 확인
+
+| 테스트명 | 검증 내용 |
+|----------|-----------|
+| 세션을 생성하면 ChatSessionResponse를 반환한다 | `saveAndFlush()` 1회 호출 + `id`, `createdAt` 포함 응답 확인 |
+| 세션 목록을 조회하면 최신순으로 반환된다 | `findAllByUserIdOrderByCreatedAtDesc()` 결과가 `ChatSessionResponse` 리스트로 반환되는지 |
+| 세션을 삭제한다 | `chatSessionRepository.delete()` 1회 호출 확인 |
+| 다른 사람의 세션을 삭제하면 예외가 발생한다 | 소유자 불일치 시 `IllegalArgumentException` + delete 미호출 확인 |
+| 존재하지 않는 세션을 삭제하면 예외가 발생한다 | `findById = empty` 시 `IllegalArgumentException` 확인 |
+| 관련 화장품이 있으면 RAG 컨텍스트가 포함된 프롬프트로 LLM을 호출한다 | `vectorStore.search()` 결과 기반으로 `cosmeticRepository.findAllById()` 호출 + LLM 프롬프트에 화장품 정보 포함 확인 |
+| 관련 화장품이 없어도 피부 정보는 항상 시스템 프롬프트에 포함된다 | `vectorStore.search()` 빈 리스트 반환 시에도 피부 타입·고민·알레르기 정보가 프롬프트에 포함되는지 확인 |
+| 히스토리가 10개를 초과하면 최근 10개만 LLM에 전달된다 | 메시지 12개 저장 후 LLM 호출 시 `ArgumentCaptor`로 history 크기가 10임을 확인 |
+| 채팅 후 USER 메시지와 ASSISTANT 메시지가 저장된다 | `chatMessageRepository.save()` 2회 호출 + 각 role 확인 |
+| 채팅 후 ChatResponse에 LLM 응답이 담긴다 | `upstageLlmClient.chat()` 반환값이 `ChatResponse.answer`에 담기는지 확인 |
+| 히스토리를 조회한다 | `findAllBySessionIdOrderByCreatedAtAsc()` 결과가 `ChatMessageResponse` 리스트로 반환되는지 |
+| 다른 사람의 세션 히스토리를 조회하면 예외가 발생한다 | 소유자 불일치 시 `IllegalArgumentException` 발생 확인 |
+
+---
+
 ### 슬라이스 테스트 (`@WebMvcTest` — HTTP 계층만 로드)
 
 ---
@@ -166,6 +190,23 @@ open build/reports/tests/test/index.html
 | name이 없으면 400을 반환한다 | `name` 필드 누락 시 `@NotBlank` Validation → 400 반환 확인 |
 | 화장품을 수정한다 | `PUT /cosmetics/{id}` 정상 요청 → 200 반환 확인 |
 | 화장품을 삭제하면 204를 반환한다 | `DELETE /cosmetics/{id}` → 204 No Content 반환 확인 |
+
+---
+
+#### `ChatControllerTest`
+**위치:** `src/test/java/com/mycosmetic/controller/ChatControllerTest.java`
+**Mock:** `ChatService`, `JwtUtil`, `UserDetailsServiceImpl`
+**목적:** JWT 인증이 적용된 채팅 세션 API HTTP 요청/응답 및 인증 처리 확인
+
+| 테스트명 | 검증 내용 |
+|----------|-----------|
+| JWT 없이 세션 생성 요청하면 401을 반환한다 | 토큰 없는 요청이 `401 Unauthorized` 반환하는지 |
+| 세션을 생성하면 200을 반환한다 | `POST /chat/sessions` 정상 요청 → 200 + `ChatSessionResponse` 반환 확인 |
+| 세션 목록을 조회하면 200을 반환한다 | `GET /chat/sessions` 정상 요청 → 200 + 리스트 반환 확인 |
+| 세션을 삭제하면 204를 반환한다 | `DELETE /chat/sessions/{id}` → 204 No Content 반환 확인 |
+| 채팅 메시지를 보내면 200을 반환한다 | `POST /chat/sessions/{id}/messages` 정상 요청 → 200 + `ChatResponse` 반환 확인 |
+| message가 빈 문자열이면 400을 반환한다 | `message: ""` 전송 시 `@NotBlank` Validation → 400 반환 확인 |
+| 히스토리를 조회하면 200을 반환한다 | `GET /chat/sessions/{id}/messages` 정상 요청 → 200 + 리스트 반환 확인 |
 
 ---
 
@@ -239,6 +280,17 @@ com.mycosmetic.service.RoutineServiceTest              7/7 ✅
 
 ---
 
+#### 2026-03-25 — Phase 4 완료 후 (64개)
+
+```
+com.mycosmetic.service.ChatServiceTest                 12/12 ✅
+com.mycosmetic.controller.ChatControllerTest            7/7  ✅
+
+결과: 19/19 통과  |  누적: 64/64
+```
+
+---
+
 ### 실제 API 통합 테스트 결과 (Upstage)
 
 **테스트 파일:** `http/test.http`
@@ -279,3 +331,23 @@ com.mycosmetic.service.RoutineServiceTest              7/7 ✅
 |------|------|------|
 | PM 루틴 name이 "아침 루틴"으로 반환 | LLM이 `timeOfDay`를 이름에 반영하지 않음 | 프롬프트에 `AM이면 "아침 루틴", PM이면 "저녁 루틴"` 규칙 명시 |
 | `test.http` 삭제 요청 400 반환 | `Authorization` 헤더 오타 (`Autjshorization`) | `test.http` 오타 수정 |
+
+---
+
+#### 2026-03-25 — Phase 4 채팅 세션 & RAG 테스트
+
+| 요청 | 결과 | 비고 |
+|------|------|------|
+| `POST /chat/sessions` | ✅ 200 | 세션 생성 + `createdAt` 정상 반환 |
+| `GET /chat/sessions` | ✅ 200 | 세션 목록 최신순 반환 |
+| `DELETE /chat/sessions/{id}` | ✅ 204 | cascade 삭제 (chat_messages → chat_sessions) 확인 |
+| `POST /chat/sessions/{id}/messages` (RAG) | ✅ 200 | 보유 화장품(Dr.G, Abib, goodal) 기반 응답 확인 |
+| `GET /chat/sessions/{id}/messages` | ✅ 200 | 히스토리 메시지 순서대로 반환 |
+
+#### 발견 이슈 및 수정 내역
+
+| 이슈 | 원인 | 수정 |
+|------|------|------|
+| `createdAt: null` in create response | `@CreationTimestamp`는 Hibernate flush 시점에 설정되나 `save()` 반환 객체에는 반영 안 됨 | `save()` → `saveAndFlush()` 변경 |
+| 벡터 스토어 초기화 400 Bad Request | `solar-embedding-1-large` 모델 deprecated | `application.yml`을 `solar-embedding-1-large-passage` / `solar-embedding-1-large-query`로 분리 |
+| 채팅 첫 요청 500 ClassCastException | Jackson이 정수값 임베딩을 `Integer`로 역직렬화 → `List<Double>` 캐스팅 실패 | `List<?>` + `((Number) elem).floatValue()` 로 변경 |
