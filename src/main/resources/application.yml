@@ -31,6 +31,7 @@ upstage:
   model:
     llm: solar-pro3-260323
     document-parse: document-parse-260128
+    embedding: solar-embedding-1-large
 
 file:
   upload-dir: ./uploads

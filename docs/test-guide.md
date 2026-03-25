@@ -14,6 +14,8 @@
 ./gradlew test --tests "com.mycosmetic.controller.CosmeticControllerTest"
 ./gradlew test --tests "com.mycosmetic.service.OcrServiceTest"
 ./gradlew test --tests "com.mycosmetic.service.FileStorageServiceTest"
+./gradlew test --tests "com.mycosmetic.service.InMemoryVectorStoreServiceTest"
+./gradlew test --tests "com.mycosmetic.service.RoutineServiceTest"
 
 # 캐시 무시하고 강제 재실행
 ./gradlew test --rerun
@@ -71,6 +73,39 @@ open build/reports/tests/test/index.html
 | 다른 사람의 화장품을 수정하면 예외가 발생한다 | 소유자 불일치 시 `IllegalArgumentException` 발생 확인 |
 | 내 화장품을 삭제한다 | `cosmeticRepository.delete()` 1회 호출 확인 |
 | 다른 사람의 화장품을 삭제하면 예외가 발생한다 | 소유자 불일치 시 `IllegalArgumentException` + `delete()` 미호출 확인 |
+
+---
+
+#### `InMemoryVectorStoreServiceTest`
+**위치:** `src/test/java/com/mycosmetic/service/InMemoryVectorStoreServiceTest.java`
+**Mock:** `UpstageEmbeddingClient`
+**목적:** 코사인 유사도 기반 벡터 검색 로직, 저장/삭제/덮어쓰기 동작 확인
+
+| 테스트명 | 검증 내용 |
+|----------|-----------|
+| addVector 후 search하면 해당 ID가 반환된다 | 벡터 추가 후 동일 방향 쿼리로 검색 시 해당 ID 반환 확인 |
+| removeVector 후 search하면 해당 ID가 반환되지 않는다 | 제거 후 store 비어 있으면 embed 미호출 + 빈 리스트 반환 확인 |
+| 쿼리와 유사도가 높은 순서로 결과가 정렬된다 | `[1,0]`, `[1,1]`, `[0,1]` 벡터 저장 후 `[1,0]` 쿼리 시 유사도 내림차순 정렬 확인 |
+| topK가 저장된 벡터 수보다 작으면 topK개만 반환된다 | 3개 저장 후 topK=2 검색 시 상위 2개만 반환 확인 |
+| 벡터 스토어가 비어 있으면 빈 리스트를 반환한다 | 빈 store 검색 시 embed 미호출 + 빈 리스트 반환 확인 |
+| addVector는 동일 ID로 재호출 시 벡터를 덮어쓴다 | 동일 ID 재저장 후 새 벡터 기준으로 검색 결과 반영 확인 |
+
+---
+
+#### `RoutineServiceTest`
+**위치:** `src/test/java/com/mycosmetic/service/RoutineServiceTest.java`
+**Mock:** `RoutineRepository`, `CosmeticRepository`, `UserRepository`, `UpstageLlmClient`
+**목적:** 루틴 생성(LLM 연동), 조회, 삭제, 소유자 검증, 엣지 케이스 확인
+
+| 테스트명 | 검증 내용 |
+|----------|-----------|
+| 보유 화장품이 있으면 LLM 추천으로 루틴이 생성된다 | LLM 응답 기반으로 `Routine` 저장 + `RoutineResponse` 필드(name, timeOfDay, steps) 확인 |
+| 보유 화장품이 없으면 예외가 발생한다 | 화장품 0개 시 `IllegalStateException` 발생 + LLM/save 미호출 확인 |
+| LLM이 존재하지 않는 화장품 ID를 반환하면 해당 step은 무시된다 | 목록에 없는 ID 반환 시 steps 비어 있는지 확인 |
+| 내 루틴 목록을 조회한다 | `findAllByUserId()` 결과가 `RoutineResponse` 리스트로 반환되는지 |
+| 내 루틴을 삭제한다 | `routineRepository.delete()` 1회 호출 확인 |
+| 존재하지 않는 루틴 삭제 시 예외가 발생한다 | `findById = empty` 시 `IllegalArgumentException` + delete 미호출 확인 |
+| 다른 사람의 루틴을 삭제하면 예외가 발생한다 | 소유자 불일치 시 `IllegalArgumentException` + delete 미호출 확인 |
 
 ---
 
@@ -187,6 +222,23 @@ com.mycosmetic.service.FileStorageServiceTest          3/3 ✅
 
 ---
 
+#### 2026-03-25 — Phase 3 완료 후 (45개)
+
+```
+com.mycosmetic.service.InMemoryVectorStoreServiceTest  6/6 ✅
+com.mycosmetic.service.RoutineServiceTest              7/7 ✅
+
+결과: 13/13 통과  |  누적: 45/45
+```
+
+> **비고 1:** `CosmeticService`에 `VectorStoreService` 의존성 추가로 기존 `CosmeticServiceTest` NPE 발생 → `@Mock VectorStoreService` 추가로 해결.
+>
+> **비고 2:** `ApplicationReadyEvent`에서 시작 시 전체 화장품 임베딩 재로드 시 테스트 DB에 데이터가 있으면 유효하지 않은 API 키로 401 발생 → try-catch로 임베딩 실패 건너뜀 처리.
+>
+> **비고 3:** `removeVector` 후 빈 store 검색 시 `embed("query")` 미호출됨 → 불필요한 스텁 선언 제거 (Mockito strict 모드 `UnnecessaryStubbingException`).
+
+---
+
 ### 실제 API 통합 테스트 결과 (Upstage)
 
 **테스트 파일:** `http/test.http`
@@ -209,3 +261,21 @@ com.mycosmetic.service.FileStorageServiceTest          3/3 ✅
 | OCR 텍스트 빈 문자열 반환 | Upstage 응답의 `text` 필드가 비어있고 텍스트는 `html` 필드에만 존재 | `parseText()`를 `content.html` 파싱으로 변경 |
 | 429 Too Many Requests | Upstage Tier 0 RPS 1 제한 — 앞면/뒷면 연속 요청 시 초과 | 두 OCR 요청 사이에 1.1초 딜레이 추가 |
 | category Enum 역직렬화 실패 | LLM이 유효하지 않은 문자열 반환 시 Jackson InvalidFormatException | `OcrParseResult.category`를 `String`으로 변경 + ETC fallback |
+
+---
+
+#### 2026-03-25 — Phase 3 루틴 추천 테스트
+
+| 요청 | 결과 | 비고 |
+|------|------|------|
+| `POST /routines` (AM) | ✅ 200 | name="아침 루틴", steps 2개 (Dr.G + goodal 선크림) |
+| `POST /routines` (PM) | ✅ 200 | name="저녁 루틴", steps 2개 |
+| `GET /routines` | ✅ 200 | AM/PM 루틴 목록 정상 반환 |
+| `DELETE /routines/{id}` | ✅ 204 | 정상 삭제 확인 |
+
+#### 발견 이슈 및 수정 내역
+
+| 이슈 | 원인 | 수정 |
+|------|------|------|
+| PM 루틴 name이 "아침 루틴"으로 반환 | LLM이 `timeOfDay`를 이름에 반영하지 않음 | 프롬프트에 `AM이면 "아침 루틴", PM이면 "저녁 루틴"` 규칙 명시 |
+| `test.http` 삭제 요청 400 반환 | `Authorization` 헤더 오타 (`Autjshorization`) | `test.http` 오타 수정 |

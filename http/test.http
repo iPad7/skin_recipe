@@ -99,3 +99,40 @@ Content-Type: application/json
 ### 4. 화장품 목록 조회
 GET http://localhost:8080/cosmetics
 Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNzc0MzYxODE2LCJleHAiOjE3NzQ0NDgyMTZ9.AMo7U7qbxtxpDzUXwxAMTwlIVKItBCnY9NJVjkSY3Uli9jRUWhg7MGWuPyeUWDCZ
+
+---
+
+### 5-1. 루틴 추천 — AM
+# 전제: 화장품이 1개 이상 등록되어 있어야 함
+# 응답: { id, name, timeOfDay, description, steps: [{order, cosmeticId, cosmeticName}], createdAt }
+POST http://localhost:8080/routines
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNzc0MzYxODE2LCJleHAiOjE3NzQ0NDgyMTZ9.AMo7U7qbxtxpDzUXwxAMTwlIVKItBCnY9NJVjkSY3Uli9jRUWhg7MGWuPyeUWDCZ
+Content-Type: application/json
+
+{
+  "timeOfDay": "AM"
+}
+
+---
+
+### 5-2. 루틴 추천 — PM
+POST http://localhost:8080/routines
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNzc0MzYxODE2LCJleHAiOjE3NzQ0NDgyMTZ9.AMo7U7qbxtxpDzUXwxAMTwlIVKItBCnY9NJVjkSY3Uli9jRUWhg7MGWuPyeUWDCZ
+Content-Type: application/json
+
+{
+  "timeOfDay": "PM"
+}
+
+---
+
+### 5-3. 루틴 목록 조회
+GET http://localhost:8080/routines
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNzc0MzYxODE2LCJleHAiOjE3NzQ0NDgyMTZ9.AMo7U7qbxtxpDzUXwxAMTwlIVKItBCnY9NJVjkSY3Uli9jRUWhg7MGWuPyeUWDCZ
+
+---
+
+### 5-4. 루틴 삭제
+# {id}를 5-3 조회 결과의 실제 id로 교체
+DELETE http://localhost:8080/routines/5
+Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNzc0MzYxODE2LCJleHAiOjE3NzQ0NDgyMTZ9.AMo7U7qbxtxpDzUXwxAMTwlIVKItBCnY9NJVjkSY3Uli9jRUWhg7MGWuPyeUWDCZ

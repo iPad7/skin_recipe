@@ -38,6 +38,9 @@ class CosmeticServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private VectorStoreService vectorStoreService;
+
     private User user;
     private User otherUser;
     private Cosmetic cosmetic;

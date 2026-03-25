@@ -8,6 +8,8 @@ import com.mycosmetic.entity.User;
 import com.mycosmetic.repository.CosmeticRepository;
 import com.mycosmetic.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +22,18 @@ public class CosmeticService {
 
     private final CosmeticRepository cosmeticRepository;
     private final UserRepository userRepository;
+    private final VectorStoreService vectorStoreService;
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void loadVectorsOnStartup() {
+        cosmeticRepository.findAll().forEach(c -> {
+            try {
+                vectorStoreService.addVector(c.getId(), toEmbedText(c));
+            } catch (Exception e) {
+                // 임베딩 실패 시 건너뜀 (API 키 미설정, 네트워크 오류 등)
+            }
+        });
+    }
 
     public List<CosmeticResponse> findAll(String email) {
         User user = getUser(email);
@@ -42,19 +56,23 @@ public class CosmeticService {
                 .ingredients(request.getIngredients())
                 .imageUrl(imageUrl)
                 .build();
-        return new CosmeticResponse(cosmeticRepository.save(cosmetic));
+        Cosmetic saved = cosmeticRepository.save(cosmetic);
+        vectorStoreService.addVector(saved.getId(), toEmbedText(saved));
+        return new CosmeticResponse(saved);
     }
 
     @Transactional
     public CosmeticResponse update(String email, Long cosmeticId, CosmeticRequest request) {
         Cosmetic cosmetic = getOwnedCosmetic(email, cosmeticId);
         cosmetic.update(request.getName(), request.getBrand(), request.getCategory(), request.getIngredients());
+        vectorStoreService.addVector(cosmetic.getId(), toEmbedText(cosmetic));
         return new CosmeticResponse(cosmetic);
     }
 
     public void delete(String email, Long cosmeticId) {
         Cosmetic cosmetic = getOwnedCosmetic(email, cosmeticId);
         cosmeticRepository.delete(cosmetic);
+        vectorStoreService.removeVector(cosmeticId);
     }
 
     public CosmeticResponse confirmOcr(String email, OcrConfirmRequest request) {
@@ -67,7 +85,13 @@ public class CosmeticService {
                 .ingredients(request.getIngredients())
                 .imageUrl(request.getImageUrl())
                 .build();
-        return new CosmeticResponse(cosmeticRepository.save(cosmetic));
+        Cosmetic saved = cosmeticRepository.save(cosmetic);
+        vectorStoreService.addVector(saved.getId(), toEmbedText(saved));
+        return new CosmeticResponse(saved);
+    }
+
+    private String toEmbedText(Cosmetic c) {
+        return c.getName() + " " + c.getBrand() + " " + c.getIngredients();
     }
 
     // 소유자 검증 — 다른 사용자의 화장품 접근 차단
