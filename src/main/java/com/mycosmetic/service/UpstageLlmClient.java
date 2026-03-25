@@ -4,7 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mycosmetic.dto.response.OcrParseResult;
 import com.mycosmetic.dto.response.RoutineLlmResult;
+import com.mycosmetic.entity.ChatMessage;
 import com.mycosmetic.entity.Cosmetic;
+import com.mycosmetic.entity.Role;
 import com.mycosmetic.entity.TimeOfDay;
 import com.mycosmetic.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -146,6 +149,31 @@ public class UpstageLlmClient {
         } catch (JsonProcessingException e) {
             throw new RuntimeException("루틴 추천 LLM 응답 파싱 실패: " + content, e);
         }
+    }
+
+    public String chat(String systemPrompt, List<ChatMessage> history, String userMessage) {
+        List<Map<String, String>> messages = new ArrayList<>();
+        messages.add(Map.of("role", "system", "content", systemPrompt));
+        for (ChatMessage msg : history) {
+            messages.add(Map.of(
+                    "role", msg.getRole() == Role.USER ? "user" : "assistant",
+                    "content", msg.getContent()
+            ));
+        }
+        messages.add(Map.of("role", "user", "content", userMessage));
+
+        Map<String, Object> requestBody = Map.of("model", llmModel, "messages", messages);
+
+        @SuppressWarnings("unchecked")
+        Map<?, ?> response = upstageWebClient.post()
+                .uri("/v1/chat/completions")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .block();
+
+        return extractContent(response);
     }
 
     private String extractJson(String content) {

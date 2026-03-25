@@ -8,6 +8,7 @@ import com.mycosmetic.entity.User;
 import com.mycosmetic.repository.CosmeticRepository;
 import com.mycosmetic.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CosmeticService {
@@ -26,13 +28,20 @@ public class CosmeticService {
 
     @EventListener(ApplicationReadyEvent.class)
     public void loadVectorsOnStartup() {
-        cosmeticRepository.findAll().forEach(c -> {
+        List<Cosmetic> all = cosmeticRepository.findAll();
+        int success = 0;
+        for (Cosmetic c : all) {
             try {
                 vectorStoreService.addVector(c.getId(), toEmbedText(c));
+                success++;
+            } catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
+                log.warn("벡터 로드 실패 — cosmeticId={}, status={}, body={}",
+                        c.getId(), e.getStatusCode(), e.getResponseBodyAsString());
             } catch (Exception e) {
-                // 임베딩 실패 시 건너뜀 (API 키 미설정, 네트워크 오류 등)
+                log.warn("벡터 로드 실패 — cosmeticId={}, reason={}", c.getId(), e.getMessage());
             }
-        });
+        }
+        log.info("벡터 스토어 초기화 완료: {}/{} 건 로드됨", success, all.size());
     }
 
     public List<CosmeticResponse> findAll(String email) {

@@ -15,15 +15,23 @@ public class UpstageEmbeddingClient {
 
     private final WebClient upstageWebClient;
 
-    @Value("${upstage.model.embedding}")
-    private String embeddingModel;
+    @Value("${upstage.model.embedding-passage}")
+    private String passageModel;
+
+    @Value("${upstage.model.embedding-query}")
+    private String queryModel;
+
+    public float[] embedPassage(String text) {
+        return embed(passageModel, text);
+    }
+
+    public float[] embedQuery(String text) {
+        return embed(queryModel, text);
+    }
 
     @SuppressWarnings("unchecked")
-    public float[] embed(String text) {
-        Map<String, Object> requestBody = Map.of(
-                "model", embeddingModel,
-                "input", text
-        );
+    private float[] embed(String model, String text) {
+        Map<String, Object> requestBody = Map.of("model", model, "input", text);
 
         Map<?, ?> response = upstageWebClient.post()
                 .uri("/v1/embeddings")
@@ -34,11 +42,11 @@ public class UpstageEmbeddingClient {
                 .block();
 
         List<Map<String, Object>> data = (List<Map<String, Object>>) response.get("data");
-        List<Double> embedding = (List<Double>) data.get(0).get("embedding");
+        List<?> embedding = (List<?>) data.get(0).get("embedding");
 
         float[] result = new float[embedding.size()];
         for (int i = 0; i < embedding.size(); i++) {
-            result[i] = embedding.get(i).floatValue();
+            result[i] = ((Number) embedding.get(i)).floatValue();
         }
         return result;
     }

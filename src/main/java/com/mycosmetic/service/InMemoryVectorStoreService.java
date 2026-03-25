@@ -20,7 +20,7 @@ public class InMemoryVectorStoreService implements VectorStoreService {
 
     @Override
     public void addVector(Long cosmeticId, String text) {
-        float[] vector = embeddingClient.embed(text);
+        float[] vector = embeddingClient.embedPassage(text);
         store.put(cosmeticId, vector);
     }
 
@@ -34,7 +34,7 @@ public class InMemoryVectorStoreService implements VectorStoreService {
         if (store.isEmpty()) {
             return List.of();
         }
-        float[] queryVector = embeddingClient.embed(query);
+        float[] queryVector = embeddingClient.embedQuery(query);
         return store.entrySet().stream()
                 .map(e -> Map.entry(e.getKey(), cosineSimilarity(queryVector, e.getValue())))
                 .sorted(Map.Entry.<Long, Double>comparingByValue().reversed())
