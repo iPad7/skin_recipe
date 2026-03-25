@@ -1,0 +1,11 @@
+.routine-card { background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.routine-card__header { display: flex; align-items: flex-start; justify-content: space-between; }
+.routine-card__title-row { display: flex; align-items: center; gap: 10px; }
+.routine-card__name { font-size: 15px; font-weight: 600; color: var(--color-text); }
+.routine-card__delete { font-size: 11px; padding: 3px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); color: var(--color-text-mid); background: var(--color-white); opacity: 0; transition: all 0.15s; }
+.routine-card:hover .routine-card__delete { opacity: 1; }
+.routine-card__delete:hover { border-color: var(--color-error); color: var(--color-error); }
+.routine-card__desc { font-size: 13px; color: var(--color-text-mid); line-height: 1.6; }
+.routine-card__steps { list-style: none; display: flex; flex-direction: column; gap: 6px; padding: 0; }
+.routine-card__step { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--color-text); }
+.routine-card__step-num { width: 20px; height: 20px; border-radius: 50%; background: var(--color-bg); border: 1px solid var(--color-border); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: var(--color-text-mid); flex-shrink: 0; }

@@ -1,0 +1,11 @@
+.cosmetic-card { background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 16px; display: flex; flex-direction: column; gap: 8px; transition: box-shadow 0.15s; }
+.cosmetic-card:hover { box-shadow: var(--shadow-sm); }
+.cosmetic-card__header { display: flex; align-items: center; justify-content: space-between; }
+.cosmetic-card__actions { display: flex; gap: 6px; opacity: 0; transition: opacity 0.15s; }
+.cosmetic-card:hover .cosmetic-card__actions { opacity: 1; }
+.cosmetic-card__btn { font-size: 11px; padding: 3px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); color: var(--color-text-mid); background: var(--color-white); transition: all 0.15s; }
+.cosmetic-card__btn:hover { border-color: var(--color-dark); color: var(--color-dark); }
+.cosmetic-card__btn--danger:hover { border-color: var(--color-error); color: var(--color-error); }
+.cosmetic-card__name { font-size: 14px; font-weight: 600; color: var(--color-text); }
+.cosmetic-card__brand { font-size: 12px; color: var(--color-text-mid); }
+.cosmetic-card__ingredients { font-size: 11px; color: var(--color-text-light); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }

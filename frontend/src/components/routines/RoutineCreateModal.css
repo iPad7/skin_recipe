@@ -1,0 +1,18 @@
+.routine-create { display: flex; flex-direction: column; gap: 20px; }
+.routine-create__desc { font-size: 13px; color: var(--color-text-mid); line-height: 1.6; }
+.routine-create__options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.routine-create__option { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 20px; border: 2px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-white); transition: all 0.15s; }
+.routine-create__option:hover:not(:disabled) { border-color: var(--color-dark); }
+.routine-create__option.active.am { border-color: var(--color-am-text); background: var(--color-am-bg); }
+.routine-create__option.active.pm { border-color: var(--color-pm-text); background: var(--color-pm-bg); }
+.routine-create__option:disabled { opacity: 0.5; cursor: not-allowed; }
+.routine-create__option-label { font-size: 20px; font-weight: 700; color: var(--color-text); }
+.routine-create__option-desc { font-size: 12px; color: var(--color-text-mid); }
+.routine-create__loading { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--color-text-mid); padding: 12px; background: var(--color-bg); border-radius: var(--radius-md); }
+.routine-create__error { font-size: 12px; color: var(--color-error); background: var(--color-error-light); padding: 8px 12px; border-radius: var(--radius-sm); }
+.routine-create__footer { display: flex; justify-content: flex-end; gap: 8px; }
+.routine-create__btn { padding: 9px 20px; background: var(--color-dark); color: white; border-radius: var(--radius-md); font-size: 13px; font-weight: 600; transition: opacity 0.15s; }
+.routine-create__btn:hover:not(:disabled) { opacity: 0.88; }
+.routine-create__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.routine-create__btn--ghost { background: transparent; color: var(--color-text-mid); border: 1px solid var(--color-border); }
+.routine-create__btn--ghost:hover:not(:disabled) { opacity: 1; border-color: var(--color-dark); color: var(--color-dark); }

@@ -1,0 +1,4 @@
+.profile-card { display: flex; align-items: center; gap: 16px; background: var(--color-white); border-radius: var(--radius-lg); padding: 20px 24px; box-shadow: var(--shadow-sm); border: 1px solid var(--color-border); }
+.profile-card__avatar { width: 48px; height: 48px; border-radius: 12px; background: var(--color-green); color: white; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.profile-card__name { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+.profile-card__tags { display: flex; flex-wrap: wrap; gap: 6px; }

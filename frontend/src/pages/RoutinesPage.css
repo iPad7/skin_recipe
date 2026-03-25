@@ -1,0 +1,8 @@
+.routines-page { flex: 1; max-width: 900px; margin: 0 auto; width: 100%; padding: 32px 24px; display: flex; flex-direction: column; gap: 24px; }
+.routines-page__header { display: flex; align-items: center; justify-content: space-between; }
+.routines-page__title { font-size: 20px; font-weight: 700; color: var(--color-text); }
+.routines-page__btn { padding: 8px 16px; background: var(--color-dark); color: white; border-radius: var(--radius-md); font-size: 13px; font-weight: 600; transition: opacity 0.15s; }
+.routines-page__btn:hover { opacity: 0.88; }
+.routines-page__loading { display: flex; align-items: center; justify-content: center; padding: 60px; }
+.routines-page__empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 80px 0; color: var(--color-text-mid); font-size: 14px; }
+.routines-page__list { display: flex; flex-direction: column; gap: 16px; }

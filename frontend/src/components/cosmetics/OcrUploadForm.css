@@ -1,0 +1,18 @@
+.ocr-upload { display: flex; flex-direction: column; gap: 16px; }
+.ocr-upload__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ocr-upload__slot { display: flex; flex-direction: column; gap: 6px; }
+.ocr-upload__slot-label { font-size: 12px; font-weight: 500; color: var(--color-text-mid); text-align: center; }
+.ocr-upload__zone { border: 2px dashed var(--color-border); border-radius: var(--radius-lg); height: 160px; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; transition: border-color 0.15s; }
+.ocr-upload__zone:hover { border-color: var(--color-dark); }
+.ocr-upload__placeholder { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ocr-upload__icon { font-size: 24px; }
+.ocr-upload__hint { font-size: 11px; color: var(--color-text-light); }
+.ocr-upload__preview { width: 100%; height: 100%; object-fit: contain; }
+.ocr-upload__input { display: none; }
+.ocr-upload__error { font-size: 12px; color: var(--color-error); background: var(--color-error-light); padding: 8px 12px; border-radius: var(--radius-sm); }
+.ocr-upload__footer { display: flex; justify-content: flex-end; gap: 8px; }
+.ocr-upload__btn { display: flex; align-items: center; gap: 6px; padding: 9px 20px; background: var(--color-dark); color: white; border-radius: var(--radius-md); font-size: 13px; font-weight: 600; transition: opacity 0.15s; }
+.ocr-upload__btn:hover { opacity: 0.88; }
+.ocr-upload__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ocr-upload__btn--ghost { background: transparent; color: var(--color-text-mid); border: 1px solid var(--color-border); }
+.ocr-upload__btn--ghost:hover { opacity: 1; border-color: var(--color-dark); color: var(--color-dark); }
