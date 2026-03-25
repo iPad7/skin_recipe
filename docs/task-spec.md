@@ -400,25 +400,54 @@ public interface VectorStoreService {
 
 ---
 
-### T4-1. `ChatMessage` 엔티티
+### T4-1. `ChatSession` + `ChatMessage` 엔티티
 
-**목표:** 대화 히스토리 저장용 엔티티 작성
+**목표:** 세션 기반 대화 히스토리 저장용 엔티티 작성
 
 **작업 내용:**
 - `Role` Enum: `USER / ASSISTANT`
-- `ChatMessage` 엔티티: `id`, `user`, `role`, `content`, `createdAt`
-- `ChatMessageRepository` 작성: `findAllByUserIdOrderByCreatedAtAsc()` 메서드 포함
+- `ChatSession` 엔티티: `id (UUID)`, `user`, `createdAt`
+  - `@OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)`로 메시지 연쇄 삭제
+- `ChatMessage` 엔티티: `id`, `session`, `role`, `content`, `createdAt`
+- `ChatSessionRepository`: `findAllByUserIdOrderByCreatedAtDesc()` 메서드 포함
+- `ChatMessageRepository`: `findAllBySessionIdOrderByCreatedAtAsc()` 메서드 포함
 
 **생성 파일:**
 - `entity/Role.java`
+- `entity/ChatSession.java`
 - `entity/ChatMessage.java`
+- `repository/ChatSessionRepository.java`
 - `repository/ChatMessageRepository.java`
 
 ---
 
-### T4-2. 챗봇 API — `POST /chat`
+### T4-2. 세션 관리 API
 
-**목표:** 사용자 질문을 받아 RAG 파이프라인을 실행하고 개인화된 답변 반환
+**목표:** 대화 세션 생성 / 목록 조회 / 삭제
+
+**엔드포인트:**
+
+| Method | URL | 설명 |
+|--------|-----|------|
+| POST | `/chat/sessions` | 새 세션 생성 |
+| GET | `/chat/sessions` | 내 세션 목록 조회 |
+| DELETE | `/chat/sessions/{sessionId}` | 세션 삭제 (메시지 연쇄 삭제) |
+
+**작업 내용:**
+- `ChatSessionResponse` DTO 작성
+- `ChatService.createSession()`, `findAllSessions()`, `deleteSession()` 구현
+- `ChatController`에 위 3개 엔드포인트 추가
+
+**생성 파일:**
+- `dto/response/ChatSessionResponse.java`
+- `service/ChatService.java`
+- `controller/ChatController.java`
+
+---
+
+### T4-3. 챗봇 API — `POST /chat/sessions/{sessionId}/messages`
+
+**목표:** 세션 내에서 질문을 받아 RAG 파이프라인을 실행하고 개인화된 답변 반환
 
 **Request Body:**
 ```json
@@ -430,49 +459,52 @@ public interface VectorStoreService {
 { "answer": "보유하신 제품 중에서 ..." }
 ```
 
-**RAG 파이프라인:**
+**RAG 파이프라인 (`ChatService` 내부):**
 1. 질문 텍스트 → `UpstageEmbeddingClient`로 벡터화
 2. `VectorStoreService.search()` → 관련 화장품 ID 3개 조회
 3. ID로 `CosmeticRepository`에서 화장품 상세 정보 조회
-4. system 프롬프트 조립:
+4. `User` 엔티티에서 피부 정보 로드
+5. system 프롬프트 조립 (`ChatService` 책임):
    - 사용자 피부타입 / 피부고민 / 알레르기 성분
    - 관련 화장품 3개의 이름, 브랜드, 성분
-5. `UpstageLlmClient` 호출 (대화 히스토리 포함)
-6. 사용자 질문 + AI 답변을 `ChatMessage`에 저장
+6. 해당 세션의 최근 10개 메시지 로드
+7. `UpstageLlmClient.chat(systemPrompt, history, userMessage)` 호출
+8. 사용자 질문 + AI 답변을 `ChatMessage`에 저장
+
+**`UpstageLlmClient` 추가 메서드:**
+```java
+String chat(String systemPrompt, List<ChatMessage> history, String userMessage)
+```
+- `ChatService`가 프롬프트를 조립해서 전달 (클라이언트는 LLM 통신만 담당)
+- `history`를 `[{"role": "user"/"assistant", "content": "..."}]`로 변환 후 전송
 
 **생성 파일:**
-- `service/ChatService.java`
-- `controller/ChatController.java`
 - `dto/request/ChatRequest.java`
 - `dto/response/ChatResponse.java`
 
 ---
 
-### T4-3. 대화 히스토리 API — `GET /chat/history`
+### T4-4. 대화 히스토리 API — `GET /chat/sessions/{sessionId}/messages`
 
-**목표:** 사용자의 전체 대화 기록 반환
+**목표:** 특정 세션의 전체 대화 기록 반환
 
 **작업 내용:**
-- `ChatService.getHistory()`: 사용자 ID로 전체 메시지 조회 (시간순)
-- `ChatController`에 `GET /chat/history` 엔드포인트 추가
+- `ChatService.getHistory()`: 세션 ID로 메시지 조회 (시간순)
+- `ChatController`에 `GET /chat/sessions/{sessionId}/messages` 엔드포인트 추가
+- `ChatMessageResponse` DTO 작성
+
+**생성 파일:**
+- `dto/response/ChatMessageResponse.java`
 
 ---
 
-### T4-4. 전역 예외 처리 + Validation 정리
+### T4-5. 전역 예외 처리 확인
 
-**목표:** 일관된 에러 응답 형식 제공
+**목표:** Phase 1에서 선행 작성된 `GlobalExceptionHandler` 커버리지 확인
 
 **작업 내용:**
-- `GlobalExceptionHandler` (`@RestControllerAdvice`) 작성:
-  - `MethodArgumentNotValidException` → 400 + 필드별 에러 메시지
-  - `UsernameNotFoundException` → 404
-  - `AccessDeniedException` → 403
-  - 그 외 `Exception` → 500
-- 에러 응답 DTO `ErrorResponse` 작성
-
-**생성 파일:**
-- `exception/GlobalExceptionHandler.java`
-- `dto/response/ErrorResponse.java`
+- `IllegalArgumentException` → 400, `UsernameNotFoundException` → 404, `Exception` → 500 확인
+- 신규 엔드포인트에서 누락된 케이스 있으면 보완
 
 ---
 

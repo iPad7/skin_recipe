@@ -46,8 +46,9 @@ Skin Recipe는 내 화장품만을 다룬다. 사진 한 장으로 성분표까�
 
 ### 3-5. RAG 챗봇
 - 질문 → Embedding → 벡터 유사도 검색 → 관련 화장품 3개 조회
-- Solar LLM 호출 시 system 프롬프트에 피부 정보 + 관련 화장품 성분 주입
-- 대화 히스토리 유지 (ChatMessage 테이블)
+- Solar LLM 호출 시 system 프롬프트에 피부 정보 + 관련 화장품 성분 주입 (ChatService 책임)
+- 세션 기반 대화 관리: ChatSession 생성/삭제, 세션별 히스토리 유지
+- 컨텍스트 윈도우: 세션 내 최근 10개 메시지만 LLM에 전달
 
 ---
 
@@ -98,9 +99,14 @@ RoutineCosmetic  ← 중간 테이블
 ├── cosmeticId (FK → Cosmetic)
 └── order (사용 순서)
 
+ChatSession
+├── id (UUID, PK)
+├── userId (FK → User)
+└── createdAt
+
 ChatMessage
 ├── id (PK)
-├── userId (FK → User)
+├── sessionId (FK → ChatSession)
 ├── role (Enum: USER/ASSISTANT)
 ├── content
 └── createdAt
@@ -126,8 +132,11 @@ Vector Store  ← DB 테이블 없음
 | GET | `/routines` | 루틴 목록 |
 | POST | `/routines` | 루틴 생성 (AI 추천) |
 | DELETE | `/routines/{id}` | 루틴 삭제 |
-| POST | `/chat` | 챗봇 질문 |
-| GET | `/chat/history` | 대화 히스토리 |
+| POST | `/chat/sessions` | 세션 생성 |
+| GET | `/chat/sessions` | 세션 목록 |
+| DELETE | `/chat/sessions/{sessionId}` | 세션 삭제 |
+| POST | `/chat/sessions/{sessionId}/messages` | 챗봇 질문 (RAG) |
+| GET | `/chat/sessions/{sessionId}/messages` | 세션 히스토리 조회 |
 
 ---
 

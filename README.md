@@ -18,15 +18,18 @@ low  → 사용자 확인 후 저장 (HITL)
 ```
 
 ```
-챗봇 질문 입력
-        ↓
+세션 생성 → 챗봇 질문 입력
+                ↓
 Upstage Embedding API → 질문 벡터화
-        ↓
+                ↓
 인메모리 벡터 검색 → 관련 화장품 3개 조회
-        ↓
-Solar LLM 호출 (피부타입 + 고민 + 알레르기 + 관련 성분 context)
-        ↓
-개인화된 답변 반환 + 대화 히스토리 저장
+                ↓
+ChatService → 시스템 프롬프트 조립
+              (피부타입 + 고민 + 알레르기 + 관련 화장품 성분)
+                ↓
+Solar LLM 호출 (세션 내 최근 10개 메시지 히스토리 포함)
+                ↓
+개인화된 답변 반환 + ChatMessage 저장
 ```
 
 ## 기술 스택
@@ -89,7 +92,7 @@ export UPSTAGE_API_KEY=your_api_key_here
 |   1   | 프로젝트 세팅 + User CRUD + JWT                                | 회원 CRUD API 완성, DB 저장 확인  |
 |   2   | Spring Security 설정 + Cosmetic CRUD + OCR 연동                | JWT 완성 + 사진 OCR 파싱 확인     |
 |   3   | HITL 분기 + Routine CRUD + VectorStoreService + InMemory 구현  | OCR→HITL→DB→벡터 전체 파이프라인 |
-|   4   | RAG 챗봇 (Embedding + 검색 + Solar) + 예외처리 + Validation    | RAG 챗봇 동작 확인                |
+|   4   | RAG 챗봇 (세션 CRUD + Embedding + 벡터 검색 + Solar)           | 세션 기반 RAG 챗봇 동작 확인      |
 |   5   | 전체 테스트 + README + ERD + GitHub 제출                       | 최종 제출 완료                    |
 
 ## 향후 개선 계획
