@@ -138,6 +138,24 @@ Authorization: Bearer <accessToken>
 
 ---
 
+### `DELETE /auth/me` — 회원 탈퇴
+
+**인증 필요**
+
+**Response `200 OK`**
+```json
+{
+  "message": "회원 탈퇴가 완료되었습니다."
+}
+```
+
+**처리 순서:** 채팅 세션·메시지 → 루틴·루틴 화장품 → 화장품·벡터 → 회원 순서로 삭제 (기존 cascade 활용)
+
+**에러**
+- `400` — 존재하지 않는 사용자
+
+---
+
 ## 2. 화장품 — `/cosmetics`
 
 모든 엔드포인트 **인증 필요**.
@@ -154,7 +172,7 @@ Authorization: Bearer <accessToken>
     "category": "SKIN",
     "ingredients": "정제수, 호투냐니아 코르다타 추출물, ...",
     "imageUrl": "/uploads/abc123.jpg",
-    "createdAt": "2026-03-25T15:34:44"
+    "createdAt": "2026-03-25T15:34:44Z"
   }
 ]
 ```
@@ -225,7 +243,7 @@ Authorization: Bearer <accessToken>
   "category": "CREAM",
   "ingredients": "정제수, ...",
   "imageUrl": "/uploads/xyz.jpg",
-  "createdAt": "2026-03-25T15:50:00"
+  "createdAt": "2026-03-25T15:50:00Z"
 }
 ```
 
@@ -301,7 +319,7 @@ Authorization: Bearer <accessToken>
       "brand": "Dr.G"
     }
   ],
-  "createdAt": "2026-03-25T16:00:00"
+  "createdAt": "2026-03-25T16:00:00Z"
 }
 ```
 
@@ -337,7 +355,7 @@ Authorization: Bearer <accessToken>
 ```json
 {
   "id": "04f22059-f407-4b26-aef4-2f297e51297a",
-  "createdAt": "2026-03-25T15:34:44"
+  "createdAt": "2026-03-25T15:34:44Z"
 }
 ```
 
@@ -350,7 +368,7 @@ Authorization: Bearer <accessToken>
 [
   {
     "id": "04f22059-f407-4b26-aef4-2f297e51297a",
-    "createdAt": "2026-03-25T15:34:44"
+    "createdAt": "2026-03-25T15:34:44Z"
   }
 ]
 ```
@@ -412,13 +430,13 @@ Authorization: Bearer <accessToken>
     "id": 1,
     "role": "USER",
     "content": "내 피부에 맞는 루틴 알려줘",
-    "createdAt": "2026-03-25T16:02:48"
+    "createdAt": "2026-03-25T16:02:48Z"
   },
   {
     "id": 2,
     "role": "ASSISTANT",
     "content": "보유하신 제품 중에서 ...",
-    "createdAt": "2026-03-25T16:02:48"
+    "createdAt": "2026-03-25T16:02:48Z"
   }
 ]
 ```

@@ -49,8 +49,8 @@ open build/reports/tests/test/index.html
 
 #### `AuthServiceTest`
 **위치:** `src/test/java/com/mycosmetic/service/AuthServiceTest.java`
-**Mock:** `UserRepository`, `BCryptPasswordEncoder`, `JwtUtil`
-**목적:** 회원가입 / 로그인 비즈니스 로직 확인
+**Mock:** `UserRepository`, `CosmeticRepository`, `RoutineRepository`, `ChatSessionRepository`, `VectorStoreService`, `BCryptPasswordEncoder`, `JwtUtil`
+**목적:** 회원가입 / 로그인 / 회원 탈퇴 비즈니스 로직 확인
 
 | 테스트명 | 검증 내용 |
 |----------|-----------|
@@ -59,6 +59,7 @@ open build/reports/tests/test/index.html
 | 올바른 이메일/비밀번호이면 JWT가 반환된다 | 로그인 성공 시 `accessToken` 포함된 `LoginResponse` 반환 확인 |
 | 존재하지 않는 이메일이면 예외가 발생한다 | `findByEmail = empty` 일 때 `IllegalArgumentException` 발생 확인 |
 | 비밀번호가 틀리면 예외가 발생한다 | `passwordEncoder.matches = false` 일 때 `IllegalArgumentException` 발생 확인 |
+| 회원 탈퇴 시 연관 데이터가 순서대로 삭제된다 | `chatSessionRepository.deleteAll()` → `routineRepository.deleteAll()` → `vectorStoreService.removeVector()` → `cosmeticRepository.deleteAll()` → `userRepository.delete()` 순서 호출 확인 |
 
 ---
 
@@ -138,8 +139,8 @@ open build/reports/tests/test/index.html
 
 #### `ChatServiceTest`
 **위치:** `src/test/java/com/mycosmetic/service/ChatServiceTest.java`
-**Mock:** `ChatSessionRepository`, `ChatMessageRepository`, `UserRepository`, `InMemoryVectorStoreService`, `CosmeticRepository`, `UpstageEmbeddingClient`, `UpstageLlmClient`
-**목적:** 세션 CRUD, RAG 파이프라인, 히스토리 제한, 소유자 검증 확인
+**Mock:** `ChatSessionRepository`, `ChatMessageRepository`, `CosmeticRepository`, `RoutineRepository`, `VectorStoreService`, `UpstageLlmClient`, `UserRepository`
+**목적:** 세션 CRUD, RAG 파이프라인, 루틴 컨텍스트 주입, 히스토리 제한, 소유자 검증 확인
 
 | 테스트명 | 검증 내용 |
 |----------|-----------|
@@ -150,6 +151,8 @@ open build/reports/tests/test/index.html
 | 존재하지 않는 세션을 삭제하면 예외가 발생한다 | `findById = empty` 시 `IllegalArgumentException` 확인 |
 | 관련 화장품이 있으면 RAG 컨텍스트가 포함된 프롬프트로 LLM을 호출한다 | `vectorStore.search()` 결과 기반으로 `cosmeticRepository.findAllById()` 호출 + LLM 프롬프트에 화장품 정보 포함 확인 |
 | 관련 화장품이 없어도 피부 정보는 항상 시스템 프롬프트에 포함된다 | `vectorStore.search()` 빈 리스트 반환 시에도 피부 타입·고민·알레르기 정보가 프롬프트에 포함되는지 확인 |
+| 루틴이 있으면 시스템 프롬프트에 루틴 정보가 포함된다 | `findAllByUserIdWithCosmetics()` 결과가 `ArgumentCaptor`로 캡처한 프롬프트에 `[보유 루틴]`·루틴명·화장품명으로 포함되는지 확인 |
+| 루틴이 없으면 시스템 프롬프트에 루틴 섹션이 포함되지 않는다 | 빈 리스트 반환 시 프롬프트에 `[보유 루틴]` 문자열 없음 확인 |
 | 히스토리가 10개를 초과하면 최근 10개만 LLM에 전달된다 | 메시지 12개 저장 후 LLM 호출 시 `ArgumentCaptor`로 history 크기가 10임을 확인 |
 | 채팅 후 USER 메시지와 ASSISTANT 메시지가 저장된다 | `chatMessageRepository.save()` 2회 호출 + 각 role 확인 |
 | 채팅 후 ChatResponse에 LLM 응답이 담긴다 | `upstageLlmClient.chat()` 반환값이 `ChatResponse.answer`에 담기는지 확인 |
@@ -288,6 +291,22 @@ com.mycosmetic.controller.ChatControllerTest            7/7  ✅
 
 결과: 19/19 통과  |  누적: 64/64
 ```
+
+---
+
+#### 2026-03-27 — 챗봇 루틴 컨텍스트 + 테스트 버그 수정 (68개)
+
+```
+com.mycosmetic.service.ChatServiceTest                 14/14 ✅  (+2 신규)
+
+결과: 4/4 통과  |  누적: 68/68
+```
+
+> **비고 1 (신규):** `ChatServiceTest`에 루틴 컨텍스트 주입 테스트 2개 추가 — `RoutineRepository` Mock 및 `makeRoutine()` 헬퍼 추가.
+>
+> **비고 2 (버그 수정):** `ChatServiceTest.createSession` — `verify(chatSessionRepository.save(...))` → `verify(chatSessionRepository.saveAndFlush(...))` 불일치 수정 (`saveAndFlush`로 구현 변경됐으나 테스트 미반영).
+>
+> **비고 3 (버그 수정):** `InMemoryVectorStoreServiceTest` — `embeddingClient.embed(String)` 단일 인자 호출 → `embedPassage()` / `embedQuery()` 분리 모델로 전환 후 테스트 미반영 수정.
 
 ---
 

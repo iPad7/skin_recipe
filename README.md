@@ -122,15 +122,27 @@ export UPSTAGE_API_KEY=your_api_key_here
 | 2 | Spring Security + Cosmetic CRUD + OCR 연동 | ✅ |
 | 3 | HITL + Routine + VectorStoreService (InMemory) | ✅ |
 | 4 | RAG 챗봇 (ChatSession + Embedding + Solar LLM) | ✅ |
-| 5 | 중간 결산 — ERD + API 정의서 | 🔄 |
-| 6 | React 프론트엔드 개발 + 백엔드 연동 | ⬜ |
-| 7 | 배포 — EC2 + RDS + Vercel | ⬜ |
-| 8 | 인수 테스트 — 전체 사용자 흐름 검증 | ⬜ |
+| 5 | 중간 결산 — ERD + API 정의서 | ✅ |
+| 6 | React 프론트엔드 개발 + 백엔드 연동 | ✅ |
+| 7 | 배포 — EC2 + RDS + Vercel | ✅ |
+| 8 | 인수 테스트 — 전체 사용자 흐름 검증 | 🔄 |
 | 9 | 마무리 — 문서 작업 | ⬜ |
 
 ## 향후 개선 계획
 
+### 기능 확장
 - 인메모리 벡터 → pgvector 마이그레이션
 - 이미지 저장 → S3 또는 외부 스토리지
 - RAG 고도화 (Chunking, Reranking)
 - 표준 성분 DB 연동
+- 주간 루틴 고도화 — DayType(레티놀 데이, BHA 데이 등) 기반 요일별 루틴 분기 및 그래프 구조 관리
+
+### 아키텍처
+- `AuthService` → `AuthService` + `UserService` 분리 (SRP)
+- 커스텀 예외 클래스 도입 (현재 `IllegalArgumentException` 직접 throw)
+- 읽기 메서드 `@Transactional(readOnly = true)` 적용
+
+### 알려진 이슈
+- 선크림이 PM 루틴에 포함되는 경우 있음 (LLM 프롬프트 튜닝 필요)
+- OCR 제품명 설명 텍스트 혼입, 브랜드 오인식, confidence 비결정적
+- TC-C09: OCR 성분 추출 불완전으로 향료 포함 여부 RAG 검증 어려움
