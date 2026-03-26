@@ -39,8 +39,8 @@ class InMemoryVectorStoreServiceTest {
     @Test
     @DisplayName("addVector 후 search하면 해당 ID가 반환된다")
     void addVector_thenSearch_returnsId() {
-        given(embeddingClient.embed("토너 이니스프리 정제수")).willReturn(VEC_X);
-        given(embeddingClient.embed("query")).willReturn(VEC_X);
+        given(embeddingClient.embedPassage("토너 이니스프리 정제수")).willReturn(VEC_X);
+        given(embeddingClient.embedQuery("query")).willReturn(VEC_X);
 
         vectorStoreService.addVector(1L, "토너 이니스프리 정제수");
         List<Long> result = vectorStoreService.search("query", 5);
@@ -51,7 +51,7 @@ class InMemoryVectorStoreServiceTest {
     @Test
     @DisplayName("removeVector 후 search하면 해당 ID가 반환되지 않는다")
     void removeVector_thenSearch_notReturned() {
-        given(embeddingClient.embed("토너 이니스프리 정제수")).willReturn(VEC_X);
+        given(embeddingClient.embedPassage("토너 이니스프리 정제수")).willReturn(VEC_X);
 
         vectorStoreService.addVector(1L, "토너 이니스프리 정제수");
         vectorStoreService.removeVector(1L);
@@ -69,10 +69,10 @@ class InMemoryVectorStoreServiceTest {
         // ID 1: [1,0] — 쿼리 [1,0]과 유사도 1.0
         // ID 2: [1,1] — 쿼리 [1,0]과 유사도 0.707
         // ID 3: [0,1] — 쿼리 [1,0]과 유사도 0.0
-        given(embeddingClient.embed("A")).willReturn(VEC_X);
-        given(embeddingClient.embed("B")).willReturn(VEC_DIAG);
-        given(embeddingClient.embed("C")).willReturn(VEC_Y);
-        given(embeddingClient.embed("query")).willReturn(VEC_X);
+        given(embeddingClient.embedPassage("A")).willReturn(VEC_X);
+        given(embeddingClient.embedPassage("B")).willReturn(VEC_DIAG);
+        given(embeddingClient.embedPassage("C")).willReturn(VEC_Y);
+        given(embeddingClient.embedQuery("query")).willReturn(VEC_X);
 
         vectorStoreService.addVector(1L, "A");
         vectorStoreService.addVector(2L, "B");
@@ -86,10 +86,10 @@ class InMemoryVectorStoreServiceTest {
     @Test
     @DisplayName("topK가 저장된 벡터 수보다 작으면 topK개만 반환된다")
     void search_topK_limitsResults() {
-        given(embeddingClient.embed("A")).willReturn(VEC_X);
-        given(embeddingClient.embed("B")).willReturn(VEC_DIAG);
-        given(embeddingClient.embed("C")).willReturn(VEC_Y);
-        given(embeddingClient.embed("query")).willReturn(VEC_X);
+        given(embeddingClient.embedPassage("A")).willReturn(VEC_X);
+        given(embeddingClient.embedPassage("B")).willReturn(VEC_DIAG);
+        given(embeddingClient.embedPassage("C")).willReturn(VEC_Y);
+        given(embeddingClient.embedQuery("query")).willReturn(VEC_X);
 
         vectorStoreService.addVector(1L, "A");
         vectorStoreService.addVector(2L, "B");
@@ -108,15 +108,15 @@ class InMemoryVectorStoreServiceTest {
 
         assertThat(result).isEmpty();
         // 빈 스토어에서는 임베딩 API를 호출하지 않아야 한다
-        verify(embeddingClient, org.mockito.Mockito.never()).embed(org.mockito.ArgumentMatchers.any());
+        verify(embeddingClient, org.mockito.Mockito.never()).embedQuery(org.mockito.ArgumentMatchers.any());
     }
 
     @Test
     @DisplayName("addVector는 동일 ID로 재호출 시 벡터를 덮어쓴다")
     void addVector_sameId_overwritesPrevious() {
-        given(embeddingClient.embed("old")).willReturn(VEC_Y);   // [0,1]
-        given(embeddingClient.embed("new")).willReturn(VEC_X);   // [1,0]
-        given(embeddingClient.embed("query")).willReturn(VEC_X); // [1,0] 방향 쿼리
+        given(embeddingClient.embedPassage("old")).willReturn(VEC_Y);   // [0,1]
+        given(embeddingClient.embedPassage("new")).willReturn(VEC_X);   // [1,0]
+        given(embeddingClient.embedQuery("query")).willReturn(VEC_X);   // [1,0] 방향 쿼리
 
         vectorStoreService.addVector(1L, "old");
         vectorStoreService.addVector(1L, "new"); // 덮어쓰기

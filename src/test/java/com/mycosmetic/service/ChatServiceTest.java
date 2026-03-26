@@ -8,6 +8,7 @@ import com.mycosmetic.entity.*;
 import com.mycosmetic.repository.ChatMessageRepository;
 import com.mycosmetic.repository.ChatSessionRepository;
 import com.mycosmetic.repository.CosmeticRepository;
+import com.mycosmetic.repository.RoutineRepository;
 import com.mycosmetic.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -38,6 +39,7 @@ class ChatServiceTest {
     @Mock private ChatSessionRepository chatSessionRepository;
     @Mock private ChatMessageRepository chatMessageRepository;
     @Mock private CosmeticRepository cosmeticRepository;
+    @Mock private RoutineRepository routineRepository;
     @Mock private VectorStoreService vectorStoreService;
     @Mock private UpstageLlmClient llmClient;
     @Mock private UserRepository userRepository;
@@ -67,7 +69,7 @@ class ChatServiceTest {
         ChatSessionResponse response = chatService.createSession("user@example.com");
 
         assertThat(response).isNotNull();
-        verify(chatSessionRepository).save(any(ChatSession.class));
+        verify(chatSessionRepository).saveAndFlush(any(ChatSession.class));
     }
 
     // ── 세션 목록 조회 ─────────────────────────────────────────────
@@ -206,6 +208,44 @@ class ChatServiceTest {
         verify(llmClient, never()).chat(any(), any(), any());
     }
 
+    @Test
+    @DisplayName("루틴이 있으면 시스템 프롬프트에 루틴 정보가 포함된다")
+    void chat_withRoutines_routineContextIncludedInPrompt() {
+        Routine routine = makeRoutine(1L, "아침 루틴", TimeOfDay.AM, List.of(cosmetic));
+
+        given(userRepository.findByEmail("user@example.com")).willReturn(Optional.of(user));
+        given(chatSessionRepository.findById(SESSION_ID)).willReturn(Optional.of(session));
+        given(vectorStoreService.search(any(), anyInt())).willReturn(List.of());
+        given(routineRepository.findAllByUserIdWithCosmetics(1L)).willReturn(List.of(routine));
+        given(chatMessageRepository.findAllBySessionIdOrderByCreatedAtAsc(SESSION_ID)).willReturn(List.of());
+        given(llmClient.chat(any(), any(), any())).willReturn("답변");
+
+        chatService.chat("user@example.com", SESSION_ID, makeRequest("루틴 알려줘"));
+
+        ArgumentCaptor<String> promptCaptor = ArgumentCaptor.forClass(String.class);
+        verify(llmClient).chat(promptCaptor.capture(), any(), any());
+        assertThat(promptCaptor.getValue()).contains("[보유 루틴]");
+        assertThat(promptCaptor.getValue()).contains("아침 루틴");
+        assertThat(promptCaptor.getValue()).contains("토너");
+    }
+
+    @Test
+    @DisplayName("루틴이 없으면 시스템 프롬프트에 루틴 섹션이 포함되지 않는다")
+    void chat_withoutRoutines_routineSectionAbsentFromPrompt() {
+        given(userRepository.findByEmail("user@example.com")).willReturn(Optional.of(user));
+        given(chatSessionRepository.findById(SESSION_ID)).willReturn(Optional.of(session));
+        given(vectorStoreService.search(any(), anyInt())).willReturn(List.of());
+        given(routineRepository.findAllByUserIdWithCosmetics(1L)).willReturn(List.of());
+        given(chatMessageRepository.findAllBySessionIdOrderByCreatedAtAsc(SESSION_ID)).willReturn(List.of());
+        given(llmClient.chat(any(), any(), any())).willReturn("답변");
+
+        chatService.chat("user@example.com", SESSION_ID, makeRequest("루틴 알려줘"));
+
+        ArgumentCaptor<String> promptCaptor = ArgumentCaptor.forClass(String.class);
+        verify(llmClient).chat(promptCaptor.capture(), any(), any());
+        assertThat(promptCaptor.getValue()).doesNotContain("[보유 루틴]");
+    }
+
     // ── 대화 히스토리 조회 ─────────────────────────────────────────
 
     @Test
@@ -276,6 +316,24 @@ class ChatServiceTest {
                     .build();
             setField(c, "id", id);
             return c;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Routine makeRoutine(Long id, String name, TimeOfDay timeOfDay, List<Cosmetic> cosmetics) {
+        try {
+            Routine r = Routine.builder()
+                    .user(user).name(name).timeOfDay(timeOfDay).description("설명")
+                    .build();
+            setField(r, "id", id);
+            for (int i = 0; i < cosmetics.size(); i++) {
+                RoutineCosmetic rc = RoutineCosmetic.builder()
+                        .routine(r).cosmetic(cosmetics.get(i)).order(i + 1)
+                        .build();
+                r.getRoutineCosmetics().add(rc);
+            }
+            return r;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
