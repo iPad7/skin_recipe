@@ -6,6 +6,9 @@ import com.mycosmetic.dto.request.UpdateUserRequest;
 import com.mycosmetic.dto.response.LoginResponse;
 import com.mycosmetic.dto.response.UserResponse;
 import com.mycosmetic.entity.User;
+import com.mycosmetic.repository.ChatSessionRepository;
+import com.mycosmetic.repository.CosmeticRepository;
+import com.mycosmetic.repository.RoutineRepository;
 import com.mycosmetic.repository.UserRepository;
 import com.mycosmetic.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final CosmeticRepository cosmeticRepository;
+    private final RoutineRepository routineRepository;
+    private final ChatSessionRepository chatSessionRepository;
+    private final VectorStoreService vectorStoreService;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
@@ -63,5 +70,23 @@ public class AuthService {
         user.update(request.getNickname(), request.getSkinType(),
                 request.getSkinConcerns(), request.getAllergyIngredients());
         return new UserResponse(user);
+    }
+
+    @Transactional
+    public void deleteMe(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        chatSessionRepository.deleteAll(
+                chatSessionRepository.findAllByUserIdOrderByCreatedAtDesc(user.getId()));
+
+        routineRepository.deleteAll(
+                routineRepository.findAllByUserId(user.getId()));
+
+        var cosmetics = cosmeticRepository.findAllByUserId(user.getId());
+        cosmetics.forEach(c -> vectorStoreService.removeVector(c.getId()));
+        cosmeticRepository.deleteAll(cosmetics);
+
+        userRepository.delete(user);
     }
 }

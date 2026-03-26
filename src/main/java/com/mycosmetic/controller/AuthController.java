@@ -43,4 +43,10 @@ public class AuthController {
                                                  @Valid @RequestBody UpdateUserRequest request) {
         return ResponseEntity.ok(authService.updateMe(userDetails.getUsername(), request));
     }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<MessageResponse> deleteMe(@AuthenticationPrincipal UserDetails userDetails) {
+        authService.deleteMe(userDetails.getUsername());
+        return ResponseEntity.ok(new MessageResponse("회원 탈퇴가 완료되었습니다."));
+    }
 }
