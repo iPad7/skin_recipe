@@ -2,13 +2,16 @@ package com.mycosmetic.service;
 
 import com.mycosmetic.dto.request.LoginRequest;
 import com.mycosmetic.dto.request.SignupRequest;
+import com.mycosmetic.dto.request.UpdateUserRequest;
 import com.mycosmetic.dto.response.LoginResponse;
+import com.mycosmetic.dto.response.UserResponse;
 import com.mycosmetic.entity.User;
 import com.mycosmetic.repository.UserRepository;
 import com.mycosmetic.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -45,5 +48,20 @@ public class AuthService {
 
         String token = jwtUtil.generateToken(user.getEmail());
         return new LoginResponse(token);
+    }
+
+    public UserResponse getMe(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        return new UserResponse(user);
+    }
+
+    @Transactional
+    public UserResponse updateMe(String email, UpdateUserRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        user.update(request.getNickname(), request.getSkinType(),
+                request.getSkinConcerns(), request.getAllergyIngredients());
+        return new UserResponse(user);
     }
 }

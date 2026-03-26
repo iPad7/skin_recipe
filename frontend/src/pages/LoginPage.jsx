@@ -16,7 +16,7 @@ export default function LoginPage() {
     setError(''); setLoading(true);
     try {
       const res = await loginApi(form);
-      login(res.data.accessToken, { email: form.email, nickname: form.email.split('@')[0] });
+      await login(res.data.accessToken);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || '이메일 또는 비밀번호를 확인해주세요.');

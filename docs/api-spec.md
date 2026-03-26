@@ -100,6 +100,44 @@ Authorization: Bearer <accessToken>
 
 ---
 
+### `GET /auth/me` — 내 정보 조회
+
+**인증 필요**
+
+**Response `200 OK`**
+```json
+{
+  "email": "user@example.com",
+  "nickname": "홍길동",
+  "skinType": "DRY",
+  "skinConcerns": "ACNE,PORE",
+  "allergyIngredients": "향료, 알코올"
+}
+```
+
+---
+
+### `PUT /auth/me` — 내 정보 수정
+
+**인증 필요**
+
+**Request Body**
+```json
+{
+  "nickname": "홍길동",
+  "skinType": "OILY",
+  "skinConcerns": "PORE,MOISTURE",
+  "allergyIngredients": "향료"
+}
+```
+
+**Response `200 OK`** — 수정된 사용자 정보 (`GET /auth/me` 응답과 동일)
+
+**에러**
+- `400` — nickname 또는 skinType 누락
+
+---
+
 ## 2. 화장품 — `/cosmetics`
 
 모든 엔드포인트 **인증 필요**.

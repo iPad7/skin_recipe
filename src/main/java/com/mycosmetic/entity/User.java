@@ -51,4 +51,11 @@ public class User {
         this.skinConcerns = skinConcerns;
         this.allergyIngredients = allergyIngredients;
     }
+
+    public void update(String nickname, SkinType skinType, String skinConcerns, String allergyIngredients) {
+        this.nickname = nickname;
+        this.skinType = skinType;
+        this.skinConcerns = skinConcerns;
+        this.allergyIngredients = allergyIngredients;
+    }
 }
