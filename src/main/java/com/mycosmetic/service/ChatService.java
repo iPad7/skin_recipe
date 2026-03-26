@@ -71,11 +71,13 @@ public class ChatService {
             throw new IllegalArgumentException("접근 권한이 없습니다.");
         }
 
-        // 1. 관련 화장품 벡터 검색 (topK=5)
+        // 1. 관련 화장품 벡터 검색 (topK=5) — 현재 유저 소유 화장품만 필터링
         List<Long> relatedIds = vectorStoreService.search(request.getMessage(), 5);
         List<Cosmetic> relatedCosmetics = relatedIds.isEmpty()
                 ? List.of()
-                : cosmeticRepository.findAllById(relatedIds);
+                : cosmeticRepository.findAllById(relatedIds).stream()
+                        .filter(c -> c.getUser().getId().equals(user.getId()))
+                        .toList();
 
         // 2. 루틴 전체 조회 (JOIN FETCH로 N+1 방지)
         List<Routine> routines = routineRepository.findAllByUserIdWithCosmetics(user.getId());
