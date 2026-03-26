@@ -12,7 +12,7 @@ Vercel (React SPA)
 EC2 t2.micro (Spring Boot)  ←── GitHub Actions (SSH :22)
     │ TCP :3306
     ▼
-RDS t3.micro (MySQL 8)
+RDS t4g.micro (MySQL 8)
     │ HTTPS
     ▼
 Upstage API (OCR / LLM / Embedding)

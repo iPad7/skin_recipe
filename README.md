@@ -47,7 +47,7 @@ Solar LLM 호출 (세션 내 최근 10개 메시지 히스토리 포함)
 | Language | Java 21 | |
 | Framework | Spring Boot 3.5 | MVC, Security |
 | ORM | Spring Data JPA | Repository 패턴 |
-| DB | MySQL 8 | Docker (로컬) / RDS t3.micro (프로덕션) |
+| DB | MySQL 8 | Docker (로컬) / RDS t4g.micro (프로덕션) |
 | 인증 | Spring Security + JWT | jjwt 0.12 |
 | 빌드 | Gradle | |
 | OCR | Upstage Document Parse | ocr=force |

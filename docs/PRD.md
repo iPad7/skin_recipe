@@ -147,7 +147,7 @@ Vector Store  ← DB 테이블 없음
 | Language | Java 21 |
 | Framework | Spring Boot 3.5 |
 | ORM | Spring Data JPA |
-| DB | MySQL 8 (Docker / RDS t3.micro) |
+| DB | MySQL 8 (Docker / RDS t4g.micro) |
 | 인증 | Spring Security + JWT (jjwt 0.12) |
 | OCR | Upstage Document Parse |
 | LLM | Upstage Solar (solar-pro3-260323) |

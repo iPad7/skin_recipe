@@ -613,10 +613,10 @@ String chat(String systemPrompt, List<ChatMessage> history, String userMessage)
 
 ### T7-1. RDS MySQL 설정
 
-**목표:** AWS RDS t3.micro (프리티어) MySQL 인스턴스 생성
+**목표:** AWS RDS t4g.micro (프리티어) MySQL 인스턴스 생성
 
 **작업 내용:**
-- RDS 인스턴스 생성 (MySQL 8, t3.micro)
+- RDS 인스턴스 생성 (MySQL 8, t4g.micro)
 - 보안 그룹 설정 (EC2에서만 접근 허용)
 - `application-prod.yml` 작성
 
