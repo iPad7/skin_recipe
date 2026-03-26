@@ -7,9 +7,9 @@
     │ HTTPS
     ▼
 Vercel (React SPA)
-    │ HTTP :8080
+    │ HTTPS :443
     ▼
-EC2 t2.micro (Spring Boot)  ←── GitHub Actions (SSM, 포트 22 불필요)
+EC2 t2.micro (Nginx → Spring Boot :8080)  ←── GitHub Actions (SSM, 포트 22 불필요)
     │ TCP :3306
     ▼
 RDS t4g.micro (MySQL 8)
@@ -24,6 +24,9 @@ Upstage API (OCR / LLM / Embedding)
 | RDS | ap-northeast-2 (서울) | db.t4g.micro | 프리티어 |
 | S3 | ap-northeast-2 (서울) | — | jar 전송용, 프리티어 |
 | Vercel | — | — | GitHub 연동 자동 배포 |
+| DuckDNS | — | — | 무료 도메인 (skin-recipe.duckdns.org) |
+
+> **Vercel은 HTTPS 전용이므로 EC2 API도 반드시 HTTPS여야 함.** HTTP로 두면 Mixed Content 오류로 브라우저가 요청을 차단함. Nginx + DuckDNS + Let's Encrypt로 해결.
 
 ---
 
@@ -39,15 +42,17 @@ Upstage API (OCR / LLM / Embedding)
 
 | 포트 | 프로토콜 | 소스 | 설명 |
 |------|----------|------|------|
-| 8080 | TCP | 0.0.0.0/0 | Spring Boot API |
+| 80 | TCP | 0.0.0.0/0 | HTTP (Let's Encrypt 인증 + HTTPS 리다이렉트) |
+| 443 | TCP | 0.0.0.0/0 | HTTPS (Nginx) |
 
 > SSH 22 포트는 열지 않음. GitHub Actions 배포는 AWS SSM으로 처리.
+> Spring Boot 8080 포트는 외부에 열지 않음. Nginx가 내부에서 프록시.
 
 ### Elastic IP
 탄력적 IP 할당 후 인스턴스에 연결. EC2 재시작 시 IP 고정 목적.
 
 ### Java 설치
-EC2 접속(SSM Session Manager 또는 EC2 Instance Connect) 후:
+EC2 접속(SSM Session Manager) 후:
 ```bash
 sudo apt update && sudo apt install -y openjdk-21-jdk
 java -version
@@ -197,7 +202,66 @@ GitHub 레포 → Settings → Secrets and variables → Actions
 
 ---
 
-## 6. Vercel (프론트엔드)
+## 6. HTTPS — DuckDNS + Nginx + Let's Encrypt
+
+Vercel(HTTPS)에서 HTTP EC2 API를 호출하면 Mixed Content 오류로 브라우저가 차단함. 무료 도메인 + Nginx 리버스 프록시 + Let's Encrypt SSL로 해결.
+
+### DuckDNS 도메인 등록
+1. https://www.duckdns.org 접속 → GitHub/Google 로그인
+2. subdomain 입력 → **add domain**
+3. current ip에 EC2 Elastic IP 입력 → **update ip**
+
+### Nginx + certbot 설치
+SSM Session Manager로 EC2 접속 후 root 전환(`sudo -i`):
+```bash
+apt update && apt install -y nginx certbot python3-certbot-nginx
+```
+
+### SSL 인증서 발급
+> Let's Encrypt가 도메인 소유 확인을 위해 포트 80으로 접근하므로, 보안 그룹에 80이 열려 있어야 함.
+
+```bash
+certbot --nginx -d skin-recipe.duckdns.org
+```
+
+이메일 입력 → 약관 동의(Y) → 뉴스레터(N)
+
+### Nginx 프록시 설정
+```bash
+cat > /etc/nginx/sites-enabled/default << 'EOF'
+server {
+    listen 80;
+    listen [::]:80;
+    server_name skin-recipe.duckdns.org;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name skin-recipe.duckdns.org;
+
+    ssl_certificate /etc/letsencrypt/live/skin-recipe.duckdns.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/skin-recipe.duckdns.org/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+EOF
+
+nginx -t && systemctl reload nginx
+```
+
+---
+
+## 7. Vercel (프론트엔드)
 
 GitHub 레포 연결 후 설정:
 
@@ -212,13 +276,13 @@ Vercel 대시보드 → Settings → Environment Variables:
 
 | 키 | 값 |
 |----|-----|
-| `VITE_API_BASE_URL` | `http://{EC2 Elastic IP}:8080` |
+| `VITE_API_BASE_URL` | `https://skin-recipe.duckdns.org` |
 
 > CORS 설정도 Vercel 도메인으로 업데이트 필요 (`SecurityConfig.java`)
 
 ---
 
-## 7. 비용 관리 주의사항
+## 8. 비용 관리 주의사항
 
 - Elastic IP는 인스턴스 **중지 시** 과금 → 항시 가동 유지
 - RDS는 중지 후 7일 뒤 자동 재시작 → 그냥 켜두는 게 나음
@@ -228,9 +292,10 @@ Vercel 대시보드 → Settings → Environment Variables:
 
 ---
 
-## 8. 보안 주의사항
+## 9. 보안 주의사항
 
-- EC2 인바운드는 8080만 개방 (SSH 22 불필요 — SSM으로 대체)
+- EC2 인바운드: 80(HTTP), 443(HTTPS)만 개방. SSH 22 불필요 — SSM으로 대체
+- Spring Boot 8080은 외부에 열지 않음 — Nginx가 내부에서만 접근
 - RDS 3306은 EC2 보안 그룹에서만 인바운드 허용
 - GitHub Secrets에만 키 저장, 레포에 절대 커밋 금지
 - `/etc/skin-recipe/env` 권한: `chmod 600`
