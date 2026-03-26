@@ -8,10 +8,12 @@ import com.mycosmetic.entity.ChatMessage;
 import com.mycosmetic.entity.ChatSession;
 import com.mycosmetic.entity.Cosmetic;
 import com.mycosmetic.entity.Role;
+import com.mycosmetic.entity.Routine;
 import com.mycosmetic.entity.User;
 import com.mycosmetic.repository.ChatMessageRepository;
 import com.mycosmetic.repository.ChatSessionRepository;
 import com.mycosmetic.repository.CosmeticRepository;
+import com.mycosmetic.repository.RoutineRepository;
 import com.mycosmetic.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +31,7 @@ public class ChatService {
     private final ChatSessionRepository chatSessionRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final CosmeticRepository cosmeticRepository;
+    private final RoutineRepository routineRepository;
     private final VectorStoreService vectorStoreService;
     private final UpstageLlmClient llmClient;
     private final UserRepository userRepository;
@@ -73,18 +77,21 @@ public class ChatService {
                 ? List.of()
                 : cosmeticRepository.findAllById(relatedIds);
 
-        // 2. 시스템 프롬프트 조립 (피부 정보는 항상, 화장품 섹션은 조건부)
-        String systemPrompt = buildSystemPrompt(user, relatedCosmetics);
+        // 2. 루틴 전체 조회 (JOIN FETCH로 N+1 방지)
+        List<Routine> routines = routineRepository.findAllByUserIdWithCosmetics(user.getId());
 
-        // 3. 최근 10개 메시지 로드
+        // 3. 시스템 프롬프트 조립 (피부 정보는 항상, 화장품·루틴 섹션은 조건부)
+        String systemPrompt = buildSystemPrompt(user, relatedCosmetics, routines);
+
+        // 4. 최근 10개 메시지 로드
         List<ChatMessage> allMessages = chatMessageRepository.findAllBySessionIdOrderByCreatedAtAsc(sessionId);
         int fromIndex = Math.max(0, allMessages.size() - 10);
         List<ChatMessage> history = allMessages.subList(fromIndex, allMessages.size());
 
-        // 4. LLM 호출
+        // 5. LLM 호출
         String answer = llmClient.chat(systemPrompt, history, request.getMessage());
 
-        // 5. 질문 + 답변 저장
+        // 6. 질문 + 답변 저장
         chatMessageRepository.save(ChatMessage.builder()
                 .session(session).role(Role.USER).content(request.getMessage()).build());
         chatMessageRepository.save(ChatMessage.builder()
@@ -105,7 +112,7 @@ public class ChatService {
                 .toList();
     }
 
-    private String buildSystemPrompt(User user, List<Cosmetic> cosmetics) {
+    private String buildSystemPrompt(User user, List<Cosmetic> cosmetics, List<Routine> routines) {
         StringBuilder sb = new StringBuilder();
         sb.append("당신은 피부 전문가 AI 어시스턴트입니다. 사용자의 피부 정보를 바탕으로 개인화된 스킨케어 조언을 제공합니다.\n\n");
         sb.append("[사용자 피부 정보]\n");
@@ -119,6 +126,18 @@ public class ChatService {
                 sb.append("- 제품명: ").append(c.getName())
                         .append(", 브랜드: ").append(c.getBrand())
                         .append(", 성분: ").append(c.getIngredients()).append("\n");
+            }
+        }
+
+        if (!routines.isEmpty()) {
+            sb.append("\n[보유 루틴]\n");
+            for (Routine r : routines) {
+                String steps = r.getRoutineCosmetics().stream()
+                        .map(rc -> rc.getCosmetic().getName())
+                        .collect(Collectors.joining(" → "));
+                sb.append("- ").append(r.getName())
+                        .append(" (").append(r.getTimeOfDay()).append("): ")
+                        .append(steps.isEmpty() ? "제품 없음" : steps).append("\n");
             }
         }
 
