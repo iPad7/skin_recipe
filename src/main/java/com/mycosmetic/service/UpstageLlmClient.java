@@ -40,6 +40,12 @@ public class UpstageLlmClient {
             - name: 제품명 (추출 불가 시 빈 문자열 "")
             - brand: 브랜드명 (추출 불가 시 빈 문자열 "")
             - category: 반드시 다음 값 중 정확히 하나만 출력 → SKIN, ESSENCE, CREAM, SUNSCREEN, CLEANSING, ETC
+              SKIN: 스킨, 토너, 부스터, 미스트, toner, mist
+              ESSENCE: 에센스, 세럼, 앰플, essence, serum, ampoule
+              CREAM: 크림, 로션, 에멀전, 밀크, 올인원, cream, lotion, emulsion, all-in-one
+              SUNSCREEN: 선크림, 선스크린, SPF, sunscreen, sun cream
+              CLEANSING: 클렌저, 폼 클렌저, 클렌징 오일/워터, cleanser, cleansing foam
+              ETC: 위에 해당하지 않는 경우 (팩, 마스크, 아이크림 등)
               (판단 불가 시 ETC 출력. 절대 다른 문자열 금지)
             - ingredients: 전성분 텍스트 원문 그대로 (추출 불가 시 빈 문자열 "")
             - confidence: high 또는 low 중 하나
