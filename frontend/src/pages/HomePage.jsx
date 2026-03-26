@@ -17,6 +17,7 @@ export default function HomePage() {
   const { sessionId } = useParams();
   const navigate = useNavigate();
   const bottomRef = useRef(null);
+  const skipFetchRef = useRef(false);
 
   const [cosmetics, setCosmetics] = useState([]);
   const [routines, setRoutines] = useState([]);
@@ -35,6 +36,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!sessionId) { setMessages([]); return; }
+    if (skipFetchRef.current) { skipFetchRef.current = false; return; }
     getMessages(sessionId).then((r) => setMessages(r.data));
   }, [sessionId]);
 
@@ -47,6 +49,7 @@ export default function HomePage() {
     if (!sid) {
       const res = await createSession();
       sid = res.data.id;
+      skipFetchRef.current = true;
       navigate(`/chat/${sid}`, { replace: true });
     }
     setMessages((prev) => [...prev, { role: 'USER', content: text, id: Date.now() }]);
