@@ -39,6 +39,9 @@ out/
 ### Diagram sources (PNG exports committed instead) ###
 *.excalidraw
 
+### Keys ###
+*.pem
+
 ### Project ###
 uploads/*
 !uploads/.gitkeep

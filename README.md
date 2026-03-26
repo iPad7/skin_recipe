@@ -104,6 +104,16 @@ export UPSTAGE_API_KEY=your_api_key_here
 ./gradlew bootRun
 ```
 
+## 배포
+
+| 구성 요소 | 서비스 | 비고 |
+|-----------|--------|------|
+| 백엔드 | AWS EC2 t2.micro (서울) | GitHub Actions 자동 배포 |
+| DB | AWS RDS t4g.micro MySQL 8 (서울) | EC2 내부망 전용 |
+| 프론트엔드 | Vercel | main 브랜치 push 시 자동 배포 |
+
+자세한 설정 절차는 [docs/deploy-guide.md](docs/deploy-guide.md) 참고.
+
 ## 개발 일정
 
 | Phase | 주요 작업 | 상태 |
