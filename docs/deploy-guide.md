@@ -9,7 +9,7 @@
 Vercel (React SPA)
     │ HTTP :8080
     ▼
-EC2 t2.micro (Spring Boot)  ←── GitHub Actions (SSH :22)
+EC2 t2.micro (Spring Boot)  ←── GitHub Actions (SSM, 포트 22 불필요)
     │ TCP :3306
     ▼
 RDS t4g.micro (MySQL 8)
@@ -22,6 +22,7 @@ Upstage API (OCR / LLM / Embedding)
 |--------|------|------|------|
 | EC2 | ap-northeast-2 (서울) | t2.micro | 프리티어 |
 | RDS | ap-northeast-2 (서울) | db.t4g.micro | 프리티어 |
+| S3 | ap-northeast-2 (서울) | — | jar 전송용, 프리티어 |
 | Vercel | — | — | GitHub 연동 자동 배포 |
 
 ---
@@ -31,29 +32,34 @@ Upstage API (OCR / LLM / Embedding)
 ### 인스턴스 생성
 - AMI: Ubuntu Server 22.04 LTS
 - 인스턴스 유형: t2.micro
-- 키 페어: Ed25519, `.pem` 로컬 보관
+- 키 페어: Ed25519, `.pem` 로컬 보관 (SSH는 사용 안 하지만 비상용 보관)
 - 스토리지: 8GB gp2
 
 ### 보안 그룹 인바운드 규칙
 
 | 포트 | 프로토콜 | 소스 | 설명 |
 |------|----------|------|------|
-| 22 | TCP | 내 IP | Local SSH access |
 | 8080 | TCP | 0.0.0.0/0 | Spring Boot API |
+
+> SSH 22 포트는 열지 않음. GitHub Actions 배포는 AWS SSM으로 처리.
 
 ### Elastic IP
 탄력적 IP 할당 후 인스턴스에 연결. EC2 재시작 시 IP 고정 목적.
 
 ### Java 설치
+EC2 접속(SSM Session Manager 또는 EC2 Instance Connect) 후:
 ```bash
 sudo apt update && sudo apt install -y openjdk-21-jdk
 java -version
 ```
 
-### 앱 디렉토리 생성
+### 앱 디렉토리 생성 및 권한 설정
 ```bash
 sudo mkdir -p /home/ubuntu/app
+sudo chown -R ubuntu:ubuntu /home/ubuntu/app
 ```
+
+> `chown` 필수. ubuntu 유저가 app 하위에 uploads 디렉토리를 생성할 권한이 필요.
 
 ### 환경변수 파일
 ```bash
@@ -83,6 +89,7 @@ After=network.target
 
 [Service]
 User=ubuntu
+WorkingDirectory=/home/ubuntu/app
 EnvironmentFile=/etc/skin-recipe/env
 ExecStart=/usr/bin/java -jar /home/ubuntu/app/app.jar
 SuccessExitStatus=143
@@ -93,6 +100,8 @@ RestartSec=5
 WantedBy=multi-user.target
 ```
 
+> `WorkingDirectory` 필수. 없으면 `./uploads`가 `/uploads`(루트)로 해석되어 권한 오류 발생.
+
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable skin-recipe
@@ -100,7 +109,39 @@ sudo systemctl enable skin-recipe
 
 ---
 
-## 2. RDS 셋업
+## 2. SSM 셋업
+
+GitHub Actions가 포트 22 없이 EC2에 명령을 전달하기 위해 AWS Systems Manager를 사용.
+
+### EC2 IAM 역할 생성
+IAM → 역할 → 역할 생성
+- 신뢰할 수 있는 엔터티: AWS 서비스 → EC2 Role for AWS Systems Manager
+- 추가 정책: `AmazonS3ReadOnlyAccess` (S3에서 jar 다운로드용)
+- 역할 이름: `skin-recipe-ec2-role`
+
+EC2 인스턴스 → 작업 → 보안 → IAM 역할 수정 → `skin-recipe-ec2-role` 연결
+
+### SSM Agent 설치 (Ubuntu 22.04는 기본 미설치)
+```bash
+sudo snap install amazon-ssm-agent --classic
+sudo systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service
+sudo systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service
+```
+
+IAM 역할 연결 후 SSM Agent 재시작하면 Systems Manager → Fleet Manager에 인스턴스가 등록됨.
+
+### AWS CLI v2 설치 (EC2에서 S3 다운로드에 필요)
+SSM → Run Command → AWS-RunShellScript로 실행:
+```bash
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip" && unzip /tmp/awscliv2.zip -d /tmp && sudo /tmp/aws/install
+```
+
+> Ubuntu 22.04 apt 패키지에 `awscli`가 없음 → 공식 설치 방법 사용.
+> `unzip`도 없으면: `sudo apt-get install -y unzip` 먼저 실행.
+
+---
+
+## 3. RDS 셋업
 
 - 엔진: MySQL 8.0
 - 템플릿: 프리티어
@@ -109,6 +150,7 @@ sudo systemctl enable skin-recipe
 - EC2 컴퓨팅 리소스 연결: skin-recipe-server 선택 (보안 그룹 자동 구성)
 
 ### DB 및 유저 생성
+EC2에서 mysql-client로 접속 후:
 ```sql
 CREATE DATABASE skinrecipe CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER 'skinrecipe'@'%' IDENTIFIED BY '{비밀번호}';
@@ -118,26 +160,44 @@ FLUSH PRIVILEGES;
 
 ---
 
-## 3. GitHub Actions
+## 4. S3 버킷 생성
+
+- 버킷 이름: `skin-recipe-deploy` (글로벌 유일)
+- 리전: ap-northeast-2 (서울)
+- 퍼블릭 액세스: 모두 차단
+- 나머지 기본값 유지
+
+---
+
+## 5. GitHub Actions
+
+### IAM 유저 생성 (GitHub Actions용)
+IAM → 사용자 → 사용자 생성
+- 사용자 이름: `skin-recipe-github-actions`
+- 정책: `AmazonSSMFullAccess`, `AmazonS3FullAccess`
+- 액세스 키 생성 → 서드 파티 서비스 → 키/시크릿 복사 보관
 
 ### GitHub Secrets 등록
 GitHub 레포 → Settings → Secrets and variables → Actions
 
 | Secret 이름 | 값 |
 |-------------|-----|
-| `EC2_HOST` | Elastic IP |
-| `EC2_USER` | `ubuntu` |
-| `EC2_SSH_KEY` | `.pem` 파일 전체 내용 |
+| `AWS_ACCESS_KEY_ID` | IAM 액세스 키 |
+| `AWS_SECRET_ACCESS_KEY` | IAM 시크릿 키 |
+| `AWS_REGION` | `ap-northeast-2` |
+| `EC2_INSTANCE_ID` | EC2 인스턴스 ID (`i-xxxxxxxxx`) |
+| `S3_BUCKET` | `skin-recipe-deploy` |
 
 ### 워크플로우
 `.github/workflows/deploy.yml` 참고. `main` 브랜치 push 시 자동 실행:
 1. Gradle `bootJar` 빌드
-2. SCP로 jar 전송
-3. SSH 접속 → systemd 재시작
+2. AWS 자격증명 설정
+3. jar → S3 업로드
+4. SSM SendCommand → EC2에서 S3 다운로드 → systemd 재시작
 
 ---
 
-## 4. Vercel (프론트엔드)
+## 6. Vercel (프론트엔드)
 
 GitHub 레포 연결 후 설정:
 
@@ -158,7 +218,7 @@ Vercel 대시보드 → Settings → Environment Variables:
 
 ---
 
-## 5. 비용 관리 주의사항
+## 7. 비용 관리 주의사항
 
 - Elastic IP는 인스턴스 **중지 시** 과금 → 항시 가동 유지
 - RDS는 중지 후 7일 뒤 자동 재시작 → 그냥 켜두는 게 나음
@@ -168,10 +228,10 @@ Vercel 대시보드 → Settings → Environment Variables:
 
 ---
 
-## 6. 보안 주의사항
+## 8. 보안 주의사항
 
-- `.pem` 파일 권한: `chmod 400`
-- `.pem` 파일 및 `application-local.yml` `.gitignore` 등록 확인
-- GitHub Secrets에만 키 저장, 레포에 절대 커밋 금지
-- SSH 22 포트는 내 IP만 허용 (GitHub Actions IP는 0.0.0.0/0 필요)
+- EC2 인바운드는 8080만 개방 (SSH 22 불필요 — SSM으로 대체)
 - RDS 3306은 EC2 보안 그룹에서만 인바운드 허용
+- GitHub Secrets에만 키 저장, 레포에 절대 커밋 금지
+- `/etc/skin-recipe/env` 권한: `chmod 600`
+- `.pem` 파일 권한: `chmod 400`, `.gitignore` 등록 확인
