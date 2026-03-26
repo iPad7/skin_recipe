@@ -19,7 +19,7 @@ export default function CosmeticSummary({ cosmetics }) {
           {cosmetics.slice(0, 4).map((c) => (
             <div key={c.id} className="cosmetic-summary__item">
               {c.imageUrl
-                ? <img src={`http://localhost:8080${c.imageUrl}`} alt={c.name} className="cosmetic-summary__img" />
+                ? <img src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}${c.imageUrl}`} alt={c.name} className="cosmetic-summary__img" />
                 : <div className="cosmetic-summary__img cosmetic-summary__img--placeholder">📦</div>
               }
               <p className="cosmetic-summary__name">{c.name}</p>
