@@ -4,7 +4,11 @@
 
 ### Base URL
 ```
+# 로컬
 http://localhost:8080
+
+# 프로덕션
+https://skin-recipe.duckdns.org
 ```
 
 ### 인증
