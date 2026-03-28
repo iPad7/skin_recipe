@@ -14,6 +14,8 @@ public class OcrParseResult {
     private String category;    // LLM이 반환하는 원본 문자열 그대로 받음
     private String ingredients;
     private String confidence;  // "high" | "low"
+    @lombok.Setter
+    private String imageUrl;
 
     @JsonIgnore
     public boolean isHighConfidence() {

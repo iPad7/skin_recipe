@@ -40,6 +40,7 @@ public class OcrService {
             CosmeticRequest request = toCosmeticRequest(result);
             return cosmeticService.save(email, request, frontUrl);
         } else {
+            result.setImageUrl(frontUrl);
             return result;
         }
     }

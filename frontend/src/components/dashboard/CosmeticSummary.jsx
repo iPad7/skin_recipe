@@ -18,7 +18,7 @@ export default function CosmeticSummary({ cosmetics }) {
         <div className="cosmetic-summary__grid">
           {cosmetics.slice(0, 4).map((c) => (
             <div key={c.id} className="cosmetic-summary__item">
-              {c.imageUrl
+              {c.imageUrl && !c.imageUrl.toLowerCase().endsWith('.heic') && !c.imageUrl.toLowerCase().endsWith('.heif')
                 ? <img src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}${c.imageUrl}`} alt={c.name} className="cosmetic-summary__img" />
                 : <div className="cosmetic-summary__img cosmetic-summary__img--placeholder">📦</div>
               }
