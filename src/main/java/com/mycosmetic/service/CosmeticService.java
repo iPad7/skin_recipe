@@ -6,6 +6,7 @@ import com.mycosmetic.dto.response.CosmeticResponse;
 import com.mycosmetic.entity.Cosmetic;
 import com.mycosmetic.entity.User;
 import com.mycosmetic.repository.CosmeticRepository;
+import com.mycosmetic.repository.RoutineCosmeticRepository;
 import com.mycosmetic.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +26,7 @@ public class CosmeticService {
     private final CosmeticRepository cosmeticRepository;
     private final UserRepository userRepository;
     private final VectorStoreService vectorStoreService;
+    private final RoutineCosmeticRepository routineCosmeticRepository;
 
     @EventListener(ApplicationReadyEvent.class)
     public void loadVectorsOnStartup() {
@@ -80,6 +82,9 @@ public class CosmeticService {
 
     public void delete(String email, Long cosmeticId) {
         Cosmetic cosmetic = getOwnedCosmetic(email, cosmeticId);
+        if (routineCosmeticRepository.existsByCosmeticId(cosmeticId)) {
+            throw new IllegalArgumentException("루틴에 포함된 화장품은 삭제할 수 없습니다. 먼저 루틴에서 제거해주세요.");
+        }
         cosmeticRepository.delete(cosmetic);
         vectorStoreService.removeVector(cosmeticId);
     }

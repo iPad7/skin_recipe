@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import heic2any from 'heic2any';
 import { uploadOcr } from '../../api/cosmetics';
 import Spinner from '../common/Spinner';
 import './OcrUploadForm.css';
@@ -8,7 +9,12 @@ function ImageZone({ label, file, preview, inputRef, onChange }) {
     <div className="ocr-upload__slot">
       <p className="ocr-upload__slot-label">{label}</p>
       <div className="ocr-upload__zone" onClick={() => inputRef.current?.click()}>
-        {preview ? (
+        {preview === 'heic-unsupported' ? (
+          <div className="ocr-upload__placeholder">
+            <span className="ocr-upload__icon">✅</span>
+            <p className="ocr-upload__hint">HEIC 파일 선택됨<br/>분석은 정상 진행됩니다</p>
+          </div>
+        ) : preview ? (
           <img src={preview} alt={label} className="ocr-upload__preview" />
         ) : (
           <div className="ocr-upload__placeholder">
@@ -31,10 +37,22 @@ export default function OcrUploadForm({ onSuccess, onCancel }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleChange = (setter) => (e) => {
+  const handleChange = (setter) => async (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    setter({ file: f, preview: URL.createObjectURL(f) });
+    const isHeic = f.type === 'image/heic' || f.type === 'image/heif'
+      || f.name.toLowerCase().endsWith('.heic') || f.name.toLowerCase().endsWith('.heif');
+    if (isHeic) {
+      try {
+        const converted = await heic2any({ blob: f, toType: 'image/jpeg', quality: 0.85 });
+        const blob = Array.isArray(converted) ? converted[0] : converted;
+        setter({ file: f, preview: URL.createObjectURL(blob) });
+      } catch {
+        setter({ file: f, preview: 'heic-unsupported' });
+      }
+    } else {
+      setter({ file: f, preview: URL.createObjectURL(f) });
+    }
   };
 
   const handleSubmit = async (e) => {

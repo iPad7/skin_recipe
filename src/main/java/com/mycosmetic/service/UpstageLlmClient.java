@@ -10,6 +10,7 @@ import com.mycosmetic.entity.Role;
 import com.mycosmetic.entity.TimeOfDay;
 import com.mycosmetic.entity.User;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UpstageLlmClient {
@@ -47,7 +49,7 @@ public class UpstageLlmClient {
               CLEANSING: 클렌저, 폼 클렌저, 클렌징 오일/워터, cleanser, cleansing foam
               ETC: 위에 해당하지 않는 경우 (팩, 마스크, 아이크림 등)
               (판단 불가 시 ETC 출력. 절대 다른 문자열 금지)
-            - ingredients: 전성분 텍스트 원문 그대로 (추출 불가 시 빈 문자열 "")
+            - ingredients: 전성분 텍스트를 단 한 글자도 생략하거나 요약하지 말고 OCR 원문 그대로 전부 출력하세요. "...", "(이하 생략)", "(이하 동일)" 같은 표현은 절대 금지. 추출 불가 시 빈 문자열 ""
             - confidence: high 또는 low 중 하나
               (high: 제품명/브랜드/전성분 모두 명확히 추출된 경우, low: 하나라도 불확실하거나 누락된 경우)
 
@@ -168,7 +170,7 @@ public class UpstageLlmClient {
         }
         messages.add(Map.of("role", "user", "content", userMessage));
 
-        Map<String, Object> requestBody = Map.of("model", llmModel, "messages", messages);
+        Map<String, Object> requestBody = Map.of("model", llmModel, "messages", messages, "reasoning_effort", "high");
 
         @SuppressWarnings("unchecked")
         Map<?, ?> response = upstageWebClient.post()

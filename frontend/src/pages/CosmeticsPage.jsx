@@ -40,8 +40,12 @@ export default function CosmeticsPage() {
 
   const handleDelete = async (id) => {
     if (!confirm('정말 삭제하시겠습니까?')) return;
-    await deleteCosmetic(id);
-    setCosmetics((p) => p.filter((c) => c.id !== id));
+    try {
+      await deleteCosmetic(id);
+      setCosmetics((p) => p.filter((c) => c.id !== id));
+    } catch (e) {
+      alert(e.response?.data?.message || '삭제에 실패했습니다.');
+    }
   };
 
   const handleOcrSuccess = (result) => {
