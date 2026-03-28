@@ -574,3 +574,19 @@ npm run dev
 | 7 | 세션 삭제 confirm 없음 | 미구현 | 화장품/루틴처럼 confirm 다이얼로그 추가 |
 | 8 | 401 시 AuthContext 상태 잔류 | interceptor가 `logout()` 미호출 | interceptor에서 `logout()` 호출하도록 리팩토링 |
 | 9 | non ISO-8859-1 헤더 오류 | 변조 토큰에 비ASCII 문자 포함 시 XHR `setRequestHeader` 실패 | `client.js`에서 토큰 유효성 검사 후 invalid 시 `logout()` 처리 |
+
+---
+
+### 버그 수정 결과 (2026-03-28)
+
+| # | 버그 | 원인 | 수정 내용 | 관련 파일 | 결과 |
+|---|------|------|-----------|-----------|------|
+| 1 | SR reasoning 블록 응답 노출 | Solar Pro3 `medium` 기본값에서 `reasoning`이 `content`에 섞여 출력 | `chat()` 호출에 `reasoning_effort: high` 추가 → `reasoning` 필드 분리 보장 | `UpstageLlmClient.java` | ✅ |
+| 2 | SR 노출 조건 불명확 | Solar Pro3 공식 문서 + 로그로 원인 분석 완료 | `reasoning_effort: high` 시 `message.reasoning` 필드 분리 확인 | - | ✅ |
+| 3 | `<br>` 태그 노출 | `react-markdown`이 raw HTML 미파싱 | `rehype-raw` 설치 + `ChatMessage.jsx`에 `rehypePlugins={[rehypeRaw]}` 추가 | `ChatMessage.jsx` | ✅ |
+| 4 | 루틴 포함 화장품 삭제 시 500 | `routine_cosmetics` FK 제약 위반, 프론트 에러 미처리 | `RoutineCosmeticRepository.existsByCosmeticId()` 추가 + `CosmeticService.delete()` 사전 검증 + `CosmeticsPage` catch 블록 추가 | `RoutineCosmeticRepository.java`, `CosmeticService.java`, `CosmeticsPage.jsx` | ✅ |
+| 5 | HEIC 이미지 프리뷰 미렌더링 | 브라우저 HEIC 미지원, `heic2any` 일부 파일 파싱 실패(code 2) | HEIC 변환 시도 후 실패 시 "HEIC 파일 선택됨 / 분석은 정상 진행됩니다" 안내 메시지 표시 | `OcrUploadForm.jsx` | ✅ |
+| 6 | 성분 파싱 줄임말 처리 | 프롬프트 강조 미흡 (`max_tokens` 기본값 `inf`로 토큰 잘림 아님, Upstage 공식 문서 확인) | `OCR_PARSE_SYSTEM_PROMPT` ingredients 규칙 강화: "단 한 글자도 생략하거나 요약하지 말고 OCR 원문 그대로 전부 출력" | `UpstageLlmClient.java` | ✅ |
+| 7 | 세션 삭제 confirm 없음 | 미구현 | `Sidebar.jsx` `handleDeleteSession`에 `window.confirm()` 추가 | `Sidebar.jsx` | ✅ |
+| 8 | 401 시 AuthContext 상태 잔류 | interceptor가 `window.location.href`만 변경, React state 미클리어 | `auth:logout` 커스텀 이벤트 발행 → `AuthContext`에서 `useEffect`로 수신 후 `logout()` 호출 | `client.js`, `AuthContext.jsx` | ✅ |
+| 9 | non ISO-8859-1 헤더 오류 | 변조 토큰에 비ASCII 문자 포함 시 XHR `setRequestHeader` 실패 | request interceptor에서 `/^[\x00-\x7F]*$/` ASCII 검증 후 invalid 시 이벤트 발행 + reject | `client.js` | ✅ |

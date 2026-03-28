@@ -135,7 +135,9 @@ export UPSTAGE_API_KEY=your_api_key_here
 - 이미지 저장 → S3 또는 외부 스토리지
 - RAG 고도화 (Chunking, Reranking)
 - 표준 성분 DB 연동
-- 주간 루틴 고도화 — DayType(레티놀 데이, BHA 데이 등) 기반 요일별 루틴 분기 및 그래프 구조 관리
+- 루틴 고도화 — 그래프 구조로 루틴 노드 관리 (BHA 데이 / 레티놀 데이 등), 주간 루틴 테이블로 요일별 루틴 분기
+- 채팅 UI에서 직접 루틴 관리 + Solar Pro3 Function Calling tool (루틴 조회 / 화장품 추가·제거 / 루틴 생성)
+- 기존 루틴 생성 기능은 초기 베이직 루틴 자동 생성으로 재활용
 
 ### 아키텍처
 - `AuthService` → `AuthService` + `UserService` 분리 (SRP)
