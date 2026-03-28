@@ -9,3 +9,10 @@
 .cosmetics-page__loading { display: flex; align-items: center; justify-content: center; padding: 60px; }
 .cosmetics-page__empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 80px 0; color: var(--color-text-mid); font-size: 14px; }
 .cosmetics-page__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+
+@media (max-width: 768px) {
+  .cosmetics-page { padding: 72px 16px 24px; }
+  .cosmetics-page__grid { grid-template-columns: 1fr; }
+  .cosmetics-page__actions { gap: 6px; }
+  .cosmetics-page__btn { padding: 7px 12px; font-size: 12px; }
+}

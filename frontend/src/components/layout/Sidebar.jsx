@@ -17,7 +17,7 @@ function groupByDate(sessions) {
   return groups;
 }
 
-export default function Sidebar() {
+export default function Sidebar({ open, onClose }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -43,20 +43,23 @@ export default function Sidebar() {
   const groups = groupByDate(sessions);
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${open ? ' sidebar--open' : ''}`}>
       <div className="sidebar__top">
-        <Link to="/" className="sidebar__logo">
-          <span className="sidebar__logo-icon">SR</span>
-          <span className="sidebar__logo-text">Skin Recipe</span>
-        </Link>
-        <button className="sidebar__new-chat" onClick={() => navigate('/')}>
+        <div className="sidebar__logo-row">
+          <Link to="/" className="sidebar__logo">
+            <span className="sidebar__logo-icon">SR</span>
+            <span className="sidebar__logo-text">Skin Recipe</span>
+          </Link>
+          <button className="sidebar__close" onClick={onClose} aria-label="메뉴 닫기">✕</button>
+        </div>
+        <button className="sidebar__new-chat" onClick={() => { navigate('/'); onClose?.(); }}>
           + 새 채팅
         </button>
         <nav className="sidebar__menu">
-          <Link to="/cosmetics" className={`sidebar__menu-item ${location.pathname === '/cosmetics' ? 'active' : ''}`}>
+          <Link to="/cosmetics" className={`sidebar__menu-item ${location.pathname === '/cosmetics' ? 'active' : ''}`} onClick={onClose}>
             <span className="sidebar__menu-icon">◻</span>내 화장품
           </Link>
-          <Link to="/routines" className={`sidebar__menu-item ${location.pathname === '/routines' ? 'active' : ''}`}>
+          <Link to="/routines" className={`sidebar__menu-item ${location.pathname === '/routines' ? 'active' : ''}`} onClick={onClose}>
             <span className="sidebar__menu-icon">◎</span>내 루틴
           </Link>
         </nav>
@@ -72,7 +75,7 @@ export default function Sidebar() {
                 <div
                   key={s.id}
                   className={`sidebar__session ${s.id === currentSessionId ? 'active' : ''}`}
-                  onClick={() => navigate(`/chat/${s.id}`)}
+                  onClick={() => { navigate(`/chat/${s.id}`); onClose?.(); }}
                 >
                   <span className="sidebar__session-text">
                     {new Date(s.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} 대화
