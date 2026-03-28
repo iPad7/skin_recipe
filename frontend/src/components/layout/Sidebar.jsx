@@ -34,6 +34,7 @@ export default function Sidebar() {
   const handleDeleteSession = async (e, id) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!window.confirm('이 대화를 삭제할까요?')) return;
     await deleteSession(id);
     setSessions((prev) => prev.filter((s) => s.id !== id));
     if (currentSessionId === id) navigate('/');

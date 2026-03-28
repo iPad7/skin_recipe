@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { getMe } from '../api/auth';
 
 const AuthContext = createContext(null);
@@ -20,6 +20,12 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('user');
     setUser(null);
   };
+
+  useEffect(() => {
+    const handler = () => logout();
+    window.addEventListener('auth:logout', handler);
+    return () => window.removeEventListener('auth:logout', handler);
+  }, []);
 
   const updateUser = (userData) => {
     localStorage.setItem('user', JSON.stringify(userData));
