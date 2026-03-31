@@ -24,7 +24,9 @@
 
 ## 데모
 
-> 📹 데모 GIF 추가 예정
+<p align="center">
+  <img src="docs/demo_v1.gif" alt="Demo" width="320"/>
+</p>
 
 ---
 
