@@ -2,8 +2,9 @@ package com.mycosmetic.adapter.out.upstage;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mycosmetic.adapter.in.web.dto.response.OcrParseResult;
-import com.mycosmetic.adapter.in.web.dto.response.RoutineLlmResult;
+import com.mycosmetic.application.cosmetic.OcrParseResult;
+import com.mycosmetic.application.port.out.LlmPort;
+import com.mycosmetic.application.routine.RoutineLlmResult;
 import com.mycosmetic.domain.chat.ChatMessage;
 import com.mycosmetic.domain.cosmetic.Cosmetic;
 import com.mycosmetic.domain.chat.Role;
@@ -26,7 +27,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class UpstageLlmClient {
+public class UpstageLlmClient implements LlmPort {
 
     private final WebClient upstageWebClient;
     private final ObjectMapper objectMapper;
@@ -59,6 +60,7 @@ public class UpstageLlmClient {
             JSON 외의 다른 텍스트는 절대 포함하지 마세요.
             """;
 
+    @Override
     public OcrParseResult parseCosmetic(String ocrText) {
         Map<String, Object> requestBody = Map.of(
                 "model", llmModel,
@@ -113,6 +115,7 @@ public class UpstageLlmClient {
             JSON 외의 다른 텍스트는 절대 포함하지 마세요.
             """;
 
+    @Override
     public RoutineLlmResult recommendRoutine(User user, List<Cosmetic> cosmetics, TimeOfDay timeOfDay) {
         String cosmeticList = cosmetics.stream()
                 .map(c -> "ID=%d, 이름=%s, 브랜드=%s, 카테고리=%s".formatted(
@@ -159,6 +162,7 @@ public class UpstageLlmClient {
         }
     }
 
+    @Override
     public String chat(String systemPrompt, List<ChatMessage> history, String userMessage) {
         List<Map<String, String>> messages = new ArrayList<>();
         messages.add(Map.of("role", "system", "content", systemPrompt));

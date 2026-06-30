@@ -1,5 +1,5 @@
 package com.mycosmetic.adapter.out.vector;
-import com.mycosmetic.adapter.out.upstage.UpstageEmbeddingClient;
+import com.mycosmetic.application.port.out.EmbeddingPort;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,7 +22,7 @@ class InMemoryVectorStoreServiceTest {
     private InMemoryVectorStoreService vectorStoreService;
 
     @Mock
-    private UpstageEmbeddingClient embeddingClient;
+    private EmbeddingPort embeddingClient;
 
     // 단위 벡터: [1,0], [0,1] 은 코사인 유사도 0
     // [1,0] 끼리는 코사인 유사도 1 (동일 방향)

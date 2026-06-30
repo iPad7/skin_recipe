@@ -1,5 +1,5 @@
 package com.mycosmetic.application.cosmetic;
-import com.mycosmetic.application.port.out.VectorStoreService;
+import com.mycosmetic.application.port.out.VectorStorePort;
 
 import com.mycosmetic.adapter.in.web.dto.request.CosmeticRequest;
 import com.mycosmetic.adapter.in.web.dto.request.OcrConfirmRequest;
@@ -26,7 +26,7 @@ public class CosmeticService {
 
     private final CosmeticRepository cosmeticRepository;
     private final UserRepository userRepository;
-    private final VectorStoreService vectorStoreService;
+    private final VectorStorePort vectorStoreService;
     private final RoutineCosmeticRepository routineCosmeticRepository;
 
     @EventListener(ApplicationReadyEvent.class)

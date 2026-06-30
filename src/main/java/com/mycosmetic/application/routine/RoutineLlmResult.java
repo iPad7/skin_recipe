@@ -1,4 +1,4 @@
-package com.mycosmetic.adapter.in.web.dto.response;
+package com.mycosmetic.application.routine;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

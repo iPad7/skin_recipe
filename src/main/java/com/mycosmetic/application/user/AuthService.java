@@ -1,5 +1,5 @@
 package com.mycosmetic.application.user;
-import com.mycosmetic.application.port.out.VectorStoreService;
+import com.mycosmetic.application.port.out.VectorStorePort;
 
 import com.mycosmetic.adapter.in.web.dto.request.LoginRequest;
 import com.mycosmetic.adapter.in.web.dto.request.SignupRequest;
@@ -25,7 +25,7 @@ public class AuthService {
     private final CosmeticRepository cosmeticRepository;
     private final RoutineRepository routineRepository;
     private final ChatSessionRepository chatSessionRepository;
-    private final VectorStoreService vectorStoreService;
+    private final VectorStorePort vectorStoreService;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 

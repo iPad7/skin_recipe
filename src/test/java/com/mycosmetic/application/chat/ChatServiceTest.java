@@ -1,6 +1,6 @@
 package com.mycosmetic.application.chat;
-import com.mycosmetic.application.port.out.VectorStoreService;
-import com.mycosmetic.adapter.out.upstage.UpstageLlmClient;
+import com.mycosmetic.application.port.out.VectorStorePort;
+import com.mycosmetic.application.port.out.LlmPort;
 
 import com.mycosmetic.adapter.in.web.dto.request.ChatRequest;
 import com.mycosmetic.adapter.in.web.dto.response.ChatMessageResponse;
@@ -45,8 +45,8 @@ class ChatServiceTest {
     @Mock private ChatMessageRepository chatMessageRepository;
     @Mock private CosmeticRepository cosmeticRepository;
     @Mock private RoutineRepository routineRepository;
-    @Mock private VectorStoreService vectorStoreService;
-    @Mock private UpstageLlmClient llmClient;
+    @Mock private VectorStorePort vectorStoreService;
+    @Mock private LlmPort llmClient;
     @Mock private UserRepository userRepository;
 
     private static final UUID SESSION_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");

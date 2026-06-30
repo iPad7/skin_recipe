@@ -1,6 +1,6 @@
 package com.mycosmetic.adapter.out.vector;
-import com.mycosmetic.application.port.out.VectorStoreService;
-import com.mycosmetic.adapter.out.upstage.UpstageEmbeddingClient;
+import com.mycosmetic.application.port.out.VectorStorePort;
+import com.mycosmetic.application.port.out.EmbeddingPort;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
@@ -15,9 +15,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @Primary
 @Service
 @RequiredArgsConstructor
-public class InMemoryVectorStoreService implements VectorStoreService {
+public class InMemoryVectorStoreService implements VectorStorePort {
 
-    private final UpstageEmbeddingClient embeddingClient;
+    private final EmbeddingPort embeddingClient;
     private final ConcurrentHashMap<Long, float[]> store = new ConcurrentHashMap<>();
 
     @Override

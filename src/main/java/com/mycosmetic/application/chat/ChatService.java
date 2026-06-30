@@ -1,6 +1,6 @@
 package com.mycosmetic.application.chat;
-import com.mycosmetic.application.port.out.VectorStoreService;
-import com.mycosmetic.adapter.out.upstage.UpstageLlmClient;
+import com.mycosmetic.application.port.out.VectorStorePort;
+import com.mycosmetic.application.port.out.LlmPort;
 
 import com.mycosmetic.adapter.in.web.dto.request.ChatRequest;
 import com.mycosmetic.adapter.in.web.dto.response.ChatMessageResponse;
@@ -34,8 +34,8 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final CosmeticRepository cosmeticRepository;
     private final RoutineRepository routineRepository;
-    private final VectorStoreService vectorStoreService;
-    private final UpstageLlmClient llmClient;
+    private final VectorStorePort vectorStoreService;
+    private final LlmPort llmClient;
     private final UserRepository userRepository;
 
     @Transactional

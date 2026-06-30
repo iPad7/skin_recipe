@@ -1,8 +1,8 @@
 package com.mycosmetic.application.routine;
-import com.mycosmetic.adapter.out.upstage.UpstageLlmClient;
+import com.mycosmetic.application.port.out.LlmPort;
 
 import com.mycosmetic.adapter.in.web.dto.request.RoutineRequest;
-import com.mycosmetic.adapter.in.web.dto.response.RoutineLlmResult;
+import com.mycosmetic.application.routine.RoutineLlmResult;
 import com.mycosmetic.adapter.in.web.dto.response.RoutineResponse;
 import com.mycosmetic.domain.user.*;
 import com.mycosmetic.domain.cosmetic.*;
@@ -45,7 +45,7 @@ class RoutineServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private UpstageLlmClient llmClient;
+    private LlmPort llmClient;
 
     private User user;
     private User otherUser;

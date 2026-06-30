@@ -1,5 +1,5 @@
 package com.mycosmetic.application.cosmetic;
-import com.mycosmetic.application.port.out.VectorStoreService;
+import com.mycosmetic.application.port.out.VectorStorePort;
 
 import com.mycosmetic.adapter.in.web.dto.request.CosmeticRequest;
 import com.mycosmetic.adapter.in.web.dto.response.CosmeticResponse;
@@ -41,7 +41,7 @@ class CosmeticServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private VectorStoreService vectorStoreService;
+    private VectorStorePort vectorStoreService;
 
     @Mock
     private RoutineCosmeticRepository routineCosmeticRepository;

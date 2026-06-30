@@ -1,5 +1,6 @@
 package com.mycosmetic.adapter.out.upstage;
 
+import com.mycosmetic.application.port.out.EmbeddingPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -11,7 +12,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class UpstageEmbeddingClient {
+public class UpstageEmbeddingClient implements EmbeddingPort {
 
     private final WebClient upstageWebClient;
 
@@ -21,10 +22,12 @@ public class UpstageEmbeddingClient {
     @Value("${upstage.model.embedding-query}")
     private String queryModel;
 
+    @Override
     public float[] embedPassage(String text) {
         return embed(passageModel, text);
     }
 
+    @Override
     public float[] embedQuery(String text) {
         return embed(queryModel, text);
     }

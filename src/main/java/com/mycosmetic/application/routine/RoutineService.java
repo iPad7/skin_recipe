@@ -1,8 +1,8 @@
 package com.mycosmetic.application.routine;
-import com.mycosmetic.adapter.out.upstage.UpstageLlmClient;
+import com.mycosmetic.application.port.out.LlmPort;
 
 import com.mycosmetic.adapter.in.web.dto.request.RoutineRequest;
-import com.mycosmetic.adapter.in.web.dto.response.RoutineLlmResult;
+import com.mycosmetic.application.routine.RoutineLlmResult;
 import com.mycosmetic.adapter.in.web.dto.response.RoutineResponse;
 import com.mycosmetic.domain.cosmetic.Cosmetic;
 import com.mycosmetic.domain.routine.Routine;
@@ -28,7 +28,7 @@ public class RoutineService {
     private final RoutineRepository routineRepository;
     private final CosmeticRepository cosmeticRepository;
     private final UserRepository userRepository;
-    private final UpstageLlmClient llmClient;
+    private final LlmPort llmClient;
 
     @Transactional
     public RoutineResponse create(String email, RoutineRequest request) {

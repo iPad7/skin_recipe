@@ -1,4 +1,4 @@
-package com.mycosmetic.adapter.in.web.dto.response;
+package com.mycosmetic.application.cosmetic;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mycosmetic.domain.cosmetic.CosmeticCategory;

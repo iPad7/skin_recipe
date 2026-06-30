@@ -1,5 +1,6 @@
 package com.mycosmetic.adapter.out.upstage;
 
+import com.mycosmetic.application.port.out.OcrPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,13 +19,14 @@ import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class UpstageOcrClient {
+public class UpstageOcrClient implements OcrPort {
 
     private final WebClient upstageWebClient;
 
     @Value("${upstage.model.document-parse}")
     private String documentParseModel;
 
+    @Override
     public String extractText(MultipartFile file) {
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
         builder.part("model", documentParseModel);

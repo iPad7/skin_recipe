@@ -1,11 +1,11 @@
 package com.mycosmetic.application.cosmetic;
-import com.mycosmetic.adapter.out.upstage.UpstageOcrClient;
-import com.mycosmetic.adapter.out.upstage.UpstageLlmClient;
-import com.mycosmetic.adapter.out.storage.FileStorageService;
+import com.mycosmetic.application.port.out.OcrPort;
+import com.mycosmetic.application.port.out.LlmPort;
+import com.mycosmetic.application.port.out.FileStoragePort;
 
 import com.mycosmetic.adapter.in.web.dto.request.CosmeticRequest;
 import com.mycosmetic.adapter.in.web.dto.response.CosmeticResponse;
-import com.mycosmetic.adapter.in.web.dto.response.OcrParseResult;
+import com.mycosmetic.application.cosmetic.OcrParseResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,9 +14,9 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class OcrService {
 
-    private final UpstageOcrClient ocrClient;
-    private final UpstageLlmClient llmClient;
-    private final FileStorageService fileStorageService;
+    private final OcrPort ocrClient;
+    private final LlmPort llmClient;
+    private final FileStoragePort fileStorageService;
     private final CosmeticService cosmeticService;
 
     /**

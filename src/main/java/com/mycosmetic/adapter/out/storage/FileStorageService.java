@@ -1,5 +1,6 @@
 package com.mycosmetic.adapter.out.storage;
 
+import com.mycosmetic.application.port.out.FileStoragePort;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -11,7 +12,7 @@ import java.nio.file.Paths;
 import java.util.UUID;
 
 @Service
-public class FileStorageService {
+public class FileStorageService implements FileStoragePort {
 
     private final Path uploadDir;
 
@@ -20,6 +21,7 @@ public class FileStorageService {
         Files.createDirectories(this.uploadDir);
     }
 
+    @Override
     public String store(MultipartFile file) {
         String extension = getExtension(file.getOriginalFilename());
         String filename = UUID.randomUUID() + extension;

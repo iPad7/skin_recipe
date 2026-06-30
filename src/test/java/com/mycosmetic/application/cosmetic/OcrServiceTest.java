@@ -1,11 +1,11 @@
 package com.mycosmetic.application.cosmetic;
-import com.mycosmetic.adapter.out.upstage.UpstageOcrClient;
-import com.mycosmetic.adapter.out.upstage.UpstageLlmClient;
-import com.mycosmetic.adapter.out.storage.FileStorageService;
+import com.mycosmetic.application.port.out.OcrPort;
+import com.mycosmetic.application.port.out.LlmPort;
+import com.mycosmetic.application.port.out.FileStoragePort;
 
 import com.mycosmetic.adapter.in.web.dto.request.CosmeticRequest;
 import com.mycosmetic.adapter.in.web.dto.response.CosmeticResponse;
-import com.mycosmetic.adapter.in.web.dto.response.OcrParseResult;
+import com.mycosmetic.application.cosmetic.OcrParseResult;
 import com.mycosmetic.domain.cosmetic.Cosmetic;
 import com.mycosmetic.domain.cosmetic.CosmeticCategory;
 import com.mycosmetic.domain.user.SkinType;
@@ -32,13 +32,13 @@ class OcrServiceTest {
     private OcrService ocrService;
 
     @Mock
-    private UpstageOcrClient ocrClient;
+    private OcrPort ocrClient;
 
     @Mock
-    private UpstageLlmClient llmClient;
+    private LlmPort llmClient;
 
     @Mock
-    private FileStorageService fileStorageService;
+    private FileStoragePort fileStorageService;
 
     @Mock
     private CosmeticService cosmeticService;
