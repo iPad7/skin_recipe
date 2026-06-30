@@ -1,15 +1,13 @@
 package com.mycosmetic.application.cosmetic;
-import com.mycosmetic.application.port.out.VectorStorePort;
 
-import com.mycosmetic.adapter.in.web.dto.request.CosmeticRequest;
-import com.mycosmetic.adapter.in.web.dto.response.CosmeticResponse;
+import com.mycosmetic.application.port.out.CosmeticRepository;
+import com.mycosmetic.application.port.out.RoutineCosmeticRepository;
+import com.mycosmetic.application.port.out.UserRepository;
+import com.mycosmetic.application.port.out.VectorStorePort;
 import com.mycosmetic.domain.cosmetic.Cosmetic;
 import com.mycosmetic.domain.cosmetic.CosmeticCategory;
 import com.mycosmetic.domain.user.SkinType;
 import com.mycosmetic.domain.user.User;
-import com.mycosmetic.adapter.out.persistence.CosmeticRepository;
-import com.mycosmetic.adapter.out.persistence.RoutineCosmeticRepository;
-import com.mycosmetic.adapter.out.persistence.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -65,10 +63,10 @@ class CosmeticServiceTest {
         given(userRepository.findByEmail("user@example.com")).willReturn(Optional.of(user));
         given(cosmeticRepository.findAllByUserId(1L)).willReturn(List.of(cosmetic));
 
-        List<CosmeticResponse> result = cosmeticService.findAll("user@example.com");
+        List<CosmeticResult> result = cosmeticService.findAll("user@example.com");
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getName()).isEqualTo("토너");
+        assertThat(result.get(0).name()).isEqualTo("토너");
     }
 
     // ── 저장 ──────────────────────────────────────────────────────
@@ -79,9 +77,9 @@ class CosmeticServiceTest {
         given(userRepository.findByEmail("user@example.com")).willReturn(Optional.of(user));
         given(cosmeticRepository.save(any(Cosmetic.class))).willReturn(cosmetic);
 
-        CosmeticResponse response = cosmeticService.save("user@example.com", makeRequest());
+        CosmeticResult response = cosmeticService.save("user@example.com", saveCommand("토너", CosmeticCategory.SKIN));
 
-        assertThat(response.getName()).isEqualTo("토너");
+        assertThat(response.name()).isEqualTo("토너");
         verify(cosmeticRepository).save(any(Cosmetic.class));
     }
 
@@ -93,10 +91,10 @@ class CosmeticServiceTest {
         given(userRepository.findByEmail("user@example.com")).willReturn(Optional.of(user));
         given(cosmeticRepository.findById(10L)).willReturn(Optional.of(cosmetic));
 
-        CosmeticRequest updateRequest = makeRequest("수분크림", CosmeticCategory.CREAM);
-        CosmeticResponse response = cosmeticService.update("user@example.com", 10L, updateRequest);
+        CosmeticResult response = cosmeticService.update("user@example.com", 10L,
+                updateCommand("수분크림", CosmeticCategory.CREAM));
 
-        assertThat(response.getName()).isEqualTo("수분크림");
+        assertThat(response.name()).isEqualTo("수분크림");
     }
 
     @Test
@@ -105,7 +103,8 @@ class CosmeticServiceTest {
         given(userRepository.findByEmail("other@example.com")).willReturn(Optional.of(otherUser));
         given(cosmeticRepository.findById(10L)).willReturn(Optional.of(cosmetic));  // user 소유
 
-        assertThatThrownBy(() -> cosmeticService.update("other@example.com", 10L, makeRequest()))
+        assertThatThrownBy(() -> cosmeticService.update("other@example.com", 10L,
+                updateCommand("토너", CosmeticCategory.SKIN)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("접근 권한");
     }
@@ -138,6 +137,14 @@ class CosmeticServiceTest {
 
     // ── 헬퍼 ──────────────────────────────────────────────────────
 
+    private SaveCosmeticCommand saveCommand(String name, CosmeticCategory category) {
+        return new SaveCosmeticCommand(name, null, category, null, null);
+    }
+
+    private UpdateCosmeticCommand updateCommand(String name, CosmeticCategory category) {
+        return new UpdateCosmeticCommand(name, null, category, null);
+    }
+
     private User makeUser(Long id, String email) {
         try {
             User u = User.builder()
@@ -165,26 +172,5 @@ class CosmeticServiceTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private CosmeticRequest makeRequest() {
-        return makeRequest("토너", CosmeticCategory.SKIN);
-    }
-
-    private CosmeticRequest makeRequest(String name, CosmeticCategory category) {
-        try {
-            CosmeticRequest req = new CosmeticRequest();
-            setField(req, "name", name);
-            setField(req, "category", category);
-            return req;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void setField(Object target, String fieldName, Object value) throws Exception {
-        var field = target.getClass().getDeclaredField(fieldName);
-        field.setAccessible(true);
-        field.set(target, value);
     }
 }

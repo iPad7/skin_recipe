@@ -1,6 +1,6 @@
 package com.mycosmetic.common.security;
 
-import com.mycosmetic.adapter.out.persistence.UserRepository;
+import com.mycosmetic.application.port.out.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;

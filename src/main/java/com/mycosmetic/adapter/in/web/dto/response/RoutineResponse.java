@@ -1,6 +1,6 @@
 package com.mycosmetic.adapter.in.web.dto.response;
 
-import com.mycosmetic.domain.routine.Routine;
+import com.mycosmetic.application.routine.RoutineResult;
 import com.mycosmetic.domain.routine.TimeOfDay;
 import lombok.Getter;
 
@@ -16,15 +16,22 @@ public class RoutineResponse {
     private final List<RoutineCosmeticItem> steps;
     private final LocalDateTime createdAt;
 
-    public RoutineResponse(Routine routine) {
-        this.id = routine.getId();
-        this.name = routine.getName();
-        this.timeOfDay = routine.getTimeOfDay();
-        this.description = routine.getDescription();
-        this.steps = routine.getRoutineCosmetics().stream()
-                .map(rc -> new RoutineCosmeticItem(rc.getOrder(), rc.getCosmetic().getId(), rc.getCosmetic().getName()))
+    private RoutineResponse(Long id, String name, TimeOfDay timeOfDay, String description,
+                            List<RoutineCosmeticItem> steps, LocalDateTime createdAt) {
+        this.id = id;
+        this.name = name;
+        this.timeOfDay = timeOfDay;
+        this.description = description;
+        this.steps = steps;
+        this.createdAt = createdAt;
+    }
+
+    public static RoutineResponse from(RoutineResult result) {
+        List<RoutineCosmeticItem> steps = result.steps().stream()
+                .map(s -> new RoutineCosmeticItem(s.order(), s.cosmeticId(), s.cosmeticName()))
                 .toList();
-        this.createdAt = routine.getCreatedAt();
+        return new RoutineResponse(result.id(), result.name(), result.timeOfDay(),
+                result.description(), steps, result.createdAt());
     }
 
     @Getter

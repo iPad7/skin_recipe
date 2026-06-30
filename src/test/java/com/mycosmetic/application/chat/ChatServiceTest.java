@@ -1,20 +1,16 @@
 package com.mycosmetic.application.chat;
-import com.mycosmetic.application.port.out.VectorStorePort;
-import com.mycosmetic.application.port.out.LlmPort;
 
-import com.mycosmetic.adapter.in.web.dto.request.ChatRequest;
-import com.mycosmetic.adapter.in.web.dto.response.ChatMessageResponse;
-import com.mycosmetic.adapter.in.web.dto.response.ChatResponse;
-import com.mycosmetic.adapter.in.web.dto.response.ChatSessionResponse;
-import com.mycosmetic.domain.user.*;
+import com.mycosmetic.application.port.out.ChatMessageRepository;
+import com.mycosmetic.application.port.out.ChatSessionRepository;
+import com.mycosmetic.application.port.out.CosmeticRepository;
+import com.mycosmetic.application.port.out.LlmPort;
+import com.mycosmetic.application.port.out.RoutineRepository;
+import com.mycosmetic.application.port.out.UserRepository;
+import com.mycosmetic.application.port.out.VectorStorePort;
+import com.mycosmetic.domain.chat.*;
 import com.mycosmetic.domain.cosmetic.*;
 import com.mycosmetic.domain.routine.*;
-import com.mycosmetic.domain.chat.*;
-import com.mycosmetic.adapter.out.persistence.ChatMessageRepository;
-import com.mycosmetic.adapter.out.persistence.ChatSessionRepository;
-import com.mycosmetic.adapter.out.persistence.CosmeticRepository;
-import com.mycosmetic.adapter.out.persistence.RoutineRepository;
-import com.mycosmetic.adapter.out.persistence.UserRepository;
+import com.mycosmetic.domain.user.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -71,7 +67,7 @@ class ChatServiceTest {
     void createSession_success() {
         given(userRepository.findByEmail("user@example.com")).willReturn(Optional.of(user));
 
-        ChatSessionResponse response = chatService.createSession("user@example.com");
+        ChatSessionResult response = chatService.createSession("user@example.com");
 
         assertThat(response).isNotNull();
         verify(chatSessionRepository).saveAndFlush(any(ChatSession.class));
@@ -86,10 +82,10 @@ class ChatServiceTest {
         given(chatSessionRepository.findAllByUserIdOrderByCreatedAtDesc(1L))
                 .willReturn(List.of(session));
 
-        List<ChatSessionResponse> result = chatService.findAllSessions("user@example.com");
+        List<ChatSessionResult> result = chatService.findAllSessions("user@example.com");
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getId()).isEqualTo(SESSION_ID);
+        assertThat(result.get(0).id()).isEqualTo(SESSION_ID);
     }
 
     // ── 세션 삭제 ──────────────────────────────────────────────────
@@ -143,9 +139,9 @@ class ChatServiceTest {
         given(chatMessageRepository.findAllBySessionIdOrderByCreatedAtAsc(SESSION_ID)).willReturn(List.of());
         given(llmClient.chat(any(), any(), any())).willReturn("토너를 추천합니다");
 
-        ChatResponse response = chatService.chat("user@example.com", SESSION_ID, makeRequest("추천해줘"));
+        ChatResult response = chatService.chat("user@example.com", SESSION_ID, new ChatCommand("추천해줘"));
 
-        assertThat(response.getAnswer()).isEqualTo("토너를 추천합니다");
+        assertThat(response.answer()).isEqualTo("토너를 추천합니다");
         verify(chatMessageRepository, times(2)).save(any(ChatMessage.class));
     }
 
@@ -158,9 +154,9 @@ class ChatServiceTest {
         given(chatMessageRepository.findAllBySessionIdOrderByCreatedAtAsc(SESSION_ID)).willReturn(List.of());
         given(llmClient.chat(any(), any(), any())).willReturn("피부 정보 기반 답변");
 
-        ChatResponse response = chatService.chat("user@example.com", SESSION_ID, makeRequest("추천해줘"));
+        ChatResult response = chatService.chat("user@example.com", SESSION_ID, new ChatCommand("추천해줘"));
 
-        assertThat(response.getAnswer()).isEqualTo("피부 정보 기반 답변");
+        assertThat(response.answer()).isEqualTo("피부 정보 기반 답변");
         verify(cosmeticRepository, never()).findAllById(any());
         verify(chatMessageRepository, times(2)).save(any(ChatMessage.class));
     }
@@ -179,7 +175,7 @@ class ChatServiceTest {
         given(chatMessageRepository.findAllBySessionIdOrderByCreatedAtAsc(SESSION_ID)).willReturn(messages);
         given(llmClient.chat(any(), any(), any())).willReturn("답변");
 
-        chatService.chat("user@example.com", SESSION_ID, makeRequest("질문"));
+        chatService.chat("user@example.com", SESSION_ID, new ChatCommand("질문"));
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<ChatMessage>> historyCaptor = ArgumentCaptor.forClass(List.class);
@@ -193,7 +189,7 @@ class ChatServiceTest {
         given(userRepository.findByEmail("user@example.com")).willReturn(Optional.of(user));
         given(chatSessionRepository.findById(SESSION_ID)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> chatService.chat("user@example.com", SESSION_ID, makeRequest("질문")))
+        assertThatThrownBy(() -> chatService.chat("user@example.com", SESSION_ID, new ChatCommand("질문")))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("세션을 찾을 수 없습니다");
 
@@ -206,7 +202,7 @@ class ChatServiceTest {
         given(userRepository.findByEmail("other@example.com")).willReturn(Optional.of(otherUser));
         given(chatSessionRepository.findById(SESSION_ID)).willReturn(Optional.of(session));
 
-        assertThatThrownBy(() -> chatService.chat("other@example.com", SESSION_ID, makeRequest("질문")))
+        assertThatThrownBy(() -> chatService.chat("other@example.com", SESSION_ID, new ChatCommand("질문")))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("접근 권한");
 
@@ -225,7 +221,7 @@ class ChatServiceTest {
         given(chatMessageRepository.findAllBySessionIdOrderByCreatedAtAsc(SESSION_ID)).willReturn(List.of());
         given(llmClient.chat(any(), any(), any())).willReturn("답변");
 
-        chatService.chat("user@example.com", SESSION_ID, makeRequest("루틴 알려줘"));
+        chatService.chat("user@example.com", SESSION_ID, new ChatCommand("루틴 알려줘"));
 
         ArgumentCaptor<String> promptCaptor = ArgumentCaptor.forClass(String.class);
         verify(llmClient).chat(promptCaptor.capture(), any(), any());
@@ -244,7 +240,7 @@ class ChatServiceTest {
         given(chatMessageRepository.findAllBySessionIdOrderByCreatedAtAsc(SESSION_ID)).willReturn(List.of());
         given(llmClient.chat(any(), any(), any())).willReturn("답변");
 
-        chatService.chat("user@example.com", SESSION_ID, makeRequest("루틴 알려줘"));
+        chatService.chat("user@example.com", SESSION_ID, new ChatCommand("루틴 알려줘"));
 
         ArgumentCaptor<String> promptCaptor = ArgumentCaptor.forClass(String.class);
         verify(llmClient).chat(promptCaptor.capture(), any(), any());
@@ -264,13 +260,13 @@ class ChatServiceTest {
         given(chatMessageRepository.findAllBySessionIdOrderByCreatedAtAsc(SESSION_ID))
                 .willReturn(List.of(userMsg, assistantMsg));
 
-        List<ChatMessageResponse> result = chatService.getHistory("user@example.com", SESSION_ID);
+        List<ChatMessageResult> result = chatService.getHistory("user@example.com", SESSION_ID);
 
         assertThat(result).hasSize(2);
-        assertThat(result.get(0).getRole()).isEqualTo(Role.USER);
-        assertThat(result.get(0).getContent()).isEqualTo("질문");
-        assertThat(result.get(1).getRole()).isEqualTo(Role.ASSISTANT);
-        assertThat(result.get(1).getContent()).isEqualTo("답변");
+        assertThat(result.get(0).role()).isEqualTo(Role.USER);
+        assertThat(result.get(0).content()).isEqualTo("질문");
+        assertThat(result.get(1).role()).isEqualTo(Role.ASSISTANT);
+        assertThat(result.get(1).content()).isEqualTo("답변");
     }
 
     @Test
@@ -339,16 +335,6 @@ class ChatServiceTest {
                 r.getRoutineCosmetics().add(rc);
             }
             return r;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private ChatRequest makeRequest(String message) {
-        try {
-            ChatRequest req = new ChatRequest();
-            setField(req, "message", message);
-            return req;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -1,6 +1,6 @@
 package com.mycosmetic.adapter.in.web.dto.response;
 
-import com.mycosmetic.domain.cosmetic.Cosmetic;
+import com.mycosmetic.application.cosmetic.CosmeticResult;
 import com.mycosmetic.domain.cosmetic.CosmeticCategory;
 import lombok.Getter;
 
@@ -17,13 +17,19 @@ public class CosmeticResponse {
     private final String imageUrl;
     private final LocalDateTime createdAt;
 
-    public CosmeticResponse(Cosmetic cosmetic) {
-        this.id = cosmetic.getId();
-        this.name = cosmetic.getName();
-        this.brand = cosmetic.getBrand();
-        this.category = cosmetic.getCategory();
-        this.ingredients = cosmetic.getIngredients();
-        this.imageUrl = cosmetic.getImageUrl();
-        this.createdAt = cosmetic.getCreatedAt();
+    private CosmeticResponse(Long id, String name, String brand, CosmeticCategory category,
+                             String ingredients, String imageUrl, LocalDateTime createdAt) {
+        this.id = id;
+        this.name = name;
+        this.brand = brand;
+        this.category = category;
+        this.ingredients = ingredients;
+        this.imageUrl = imageUrl;
+        this.createdAt = createdAt;
+    }
+
+    public static CosmeticResponse from(CosmeticResult result) {
+        return new CosmeticResponse(result.id(), result.name(), result.brand(), result.category(),
+                result.ingredients(), result.imageUrl(), result.createdAt());
     }
 }

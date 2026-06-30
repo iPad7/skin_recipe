@@ -2,6 +2,8 @@ package com.mycosmetic.adapter.in.web;
 
 import com.mycosmetic.adapter.in.web.dto.request.RoutineRequest;
 import com.mycosmetic.adapter.in.web.dto.response.RoutineResponse;
+import com.mycosmetic.application.routine.CreateRoutineCommand;
+import com.mycosmetic.application.routine.RoutineResult;
 import com.mycosmetic.application.routine.RoutineService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,13 +25,18 @@ public class RoutineController {
     public ResponseEntity<RoutineResponse> create(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody RoutineRequest request) {
-        return ResponseEntity.ok(routineService.create(userDetails.getUsername(), request));
+        RoutineResult result = routineService.create(userDetails.getUsername(),
+                new CreateRoutineCommand(request.getTimeOfDay()));
+        return ResponseEntity.ok(RoutineResponse.from(result));
     }
 
     @GetMapping
     public ResponseEntity<List<RoutineResponse>> findAll(
             @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(routineService.findAll(userDetails.getUsername()));
+        List<RoutineResponse> body = routineService.findAll(userDetails.getUsername()).stream()
+                .map(RoutineResponse::from)
+                .toList();
+        return ResponseEntity.ok(body);
     }
 
     @DeleteMapping("/{id}")

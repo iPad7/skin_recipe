@@ -4,6 +4,8 @@ import com.mycosmetic.adapter.in.web.dto.request.ChatRequest;
 import com.mycosmetic.adapter.in.web.dto.response.ChatMessageResponse;
 import com.mycosmetic.adapter.in.web.dto.response.ChatResponse;
 import com.mycosmetic.adapter.in.web.dto.response.ChatSessionResponse;
+import com.mycosmetic.application.chat.ChatCommand;
+import com.mycosmetic.application.chat.ChatResult;
 import com.mycosmetic.application.chat.ChatService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,13 +27,17 @@ public class ChatController {
     @PostMapping("/sessions")
     public ResponseEntity<ChatSessionResponse> createSession(
             @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(chatService.createSession(userDetails.getUsername()));
+        return ResponseEntity.ok(ChatSessionResponse.from(
+                chatService.createSession(userDetails.getUsername())));
     }
 
     @GetMapping("/sessions")
     public ResponseEntity<List<ChatSessionResponse>> findAllSessions(
             @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(chatService.findAllSessions(userDetails.getUsername()));
+        List<ChatSessionResponse> body = chatService.findAllSessions(userDetails.getUsername()).stream()
+                .map(ChatSessionResponse::from)
+                .toList();
+        return ResponseEntity.ok(body);
     }
 
     @PostMapping("/sessions/{sessionId}/messages")
@@ -39,14 +45,19 @@ public class ChatController {
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable UUID sessionId,
             @Valid @RequestBody ChatRequest request) {
-        return ResponseEntity.ok(chatService.chat(userDetails.getUsername(), sessionId, request));
+        ChatResult result = chatService.chat(userDetails.getUsername(), sessionId,
+                new ChatCommand(request.getMessage()));
+        return ResponseEntity.ok(ChatResponse.from(result));
     }
 
     @GetMapping("/sessions/{sessionId}/messages")
     public ResponseEntity<List<ChatMessageResponse>> getHistory(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable UUID sessionId) {
-        return ResponseEntity.ok(chatService.getHistory(userDetails.getUsername(), sessionId));
+        List<ChatMessageResponse> body = chatService.getHistory(userDetails.getUsername(), sessionId).stream()
+                .map(ChatMessageResponse::from)
+                .toList();
+        return ResponseEntity.ok(body);
     }
 
     @DeleteMapping("/sessions/{sessionId}")

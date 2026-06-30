@@ -1,17 +1,12 @@
 package com.mycosmetic.application.user;
-import com.mycosmetic.application.port.out.VectorStorePort;
 
-import com.mycosmetic.adapter.in.web.dto.request.LoginRequest;
-import com.mycosmetic.adapter.in.web.dto.request.SignupRequest;
-import com.mycosmetic.adapter.in.web.dto.request.UpdateUserRequest;
-import com.mycosmetic.adapter.in.web.dto.response.LoginResponse;
-import com.mycosmetic.adapter.in.web.dto.response.UserResponse;
-import com.mycosmetic.domain.user.User;
-import com.mycosmetic.adapter.out.persistence.ChatSessionRepository;
-import com.mycosmetic.adapter.out.persistence.CosmeticRepository;
-import com.mycosmetic.adapter.out.persistence.RoutineRepository;
-import com.mycosmetic.adapter.out.persistence.UserRepository;
+import com.mycosmetic.application.port.out.ChatSessionRepository;
+import com.mycosmetic.application.port.out.CosmeticRepository;
+import com.mycosmetic.application.port.out.RoutineRepository;
+import com.mycosmetic.application.port.out.UserRepository;
+import com.mycosmetic.application.port.out.VectorStorePort;
 import com.mycosmetic.common.security.JwtUtil;
+import com.mycosmetic.domain.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,48 +24,48 @@ public class AuthService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
-    public void signup(SignupRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+    public void signup(SignupCommand command) {
+        if (userRepository.existsByEmail(command.email())) {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
         }
 
         User user = User.builder()
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .nickname(request.getNickname())
-                .skinType(request.getSkinType())
-                .skinConcerns(request.getSkinConcerns())
-                .allergyIngredients(request.getAllergyIngredients())
+                .email(command.email())
+                .password(passwordEncoder.encode(command.password()))
+                .nickname(command.nickname())
+                .skinType(command.skinType())
+                .skinConcerns(command.skinConcerns())
+                .allergyIngredients(command.allergyIngredients())
                 .build();
 
         userRepository.save(user);
     }
 
-    public LoginResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+    public LoginResult login(LoginCommand command) {
+        User user = userRepository.findByEmail(command.email())
                 .orElseThrow(() -> new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다."));
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(command.password(), user.getPassword())) {
             throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다.");
         }
 
         String token = jwtUtil.generateToken(user.getEmail());
-        return new LoginResponse(token);
+        return new LoginResult(token);
     }
 
-    public UserResponse getMe(String email) {
+    public UserResult getMe(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-        return new UserResponse(user);
+        return UserResult.from(user);
     }
 
     @Transactional
-    public UserResponse updateMe(String email, UpdateUserRequest request) {
+    public UserResult updateMe(String email, UpdateUserCommand command) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-        user.update(request.getNickname(), request.getSkinType(),
-                request.getSkinConcerns(), request.getAllergyIngredients());
-        return new UserResponse(user);
+        user.update(command.nickname(), command.skinType(),
+                command.skinConcerns(), command.allergyIngredients());
+        return UserResult.from(user);
     }
 
     @Transactional

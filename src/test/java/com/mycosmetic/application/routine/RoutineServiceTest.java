@@ -1,16 +1,12 @@
 package com.mycosmetic.application.routine;
-import com.mycosmetic.application.port.out.LlmPort;
 
-import com.mycosmetic.adapter.in.web.dto.request.RoutineRequest;
-import com.mycosmetic.application.routine.RoutineLlmResult;
-import com.mycosmetic.adapter.in.web.dto.response.RoutineResponse;
-import com.mycosmetic.domain.user.*;
+import com.mycosmetic.application.port.out.CosmeticRepository;
+import com.mycosmetic.application.port.out.LlmPort;
+import com.mycosmetic.application.port.out.RoutineRepository;
+import com.mycosmetic.application.port.out.UserRepository;
 import com.mycosmetic.domain.cosmetic.*;
 import com.mycosmetic.domain.routine.*;
-import com.mycosmetic.domain.chat.*;
-import com.mycosmetic.adapter.out.persistence.CosmeticRepository;
-import com.mycosmetic.adapter.out.persistence.RoutineRepository;
-import com.mycosmetic.adapter.out.persistence.UserRepository;
+import com.mycosmetic.domain.user.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -68,13 +64,13 @@ class RoutineServiceTest {
         given(llmClient.recommendRoutine(any(), any(), any()))
                 .willReturn(makeLlmResult("아침 루틴", "보습 루틴", 10L, 1));
 
-        RoutineResponse response = routineService.create("user@example.com", makeRequest(TimeOfDay.AM));
+        RoutineResult response = routineService.create("user@example.com", new CreateRoutineCommand(TimeOfDay.AM));
 
-        assertThat(response.getName()).isEqualTo("아침 루틴");
-        assertThat(response.getTimeOfDay()).isEqualTo(TimeOfDay.AM);
-        assertThat(response.getDescription()).isEqualTo("보습 루틴");
-        assertThat(response.getSteps()).hasSize(1);
-        assertThat(response.getSteps().get(0).getCosmeticId()).isEqualTo(10L);
+        assertThat(response.name()).isEqualTo("아침 루틴");
+        assertThat(response.timeOfDay()).isEqualTo(TimeOfDay.AM);
+        assertThat(response.description()).isEqualTo("보습 루틴");
+        assertThat(response.steps()).hasSize(1);
+        assertThat(response.steps().get(0).cosmeticId()).isEqualTo(10L);
         verify(routineRepository).save(any(Routine.class));
     }
 
@@ -84,7 +80,7 @@ class RoutineServiceTest {
         given(userRepository.findByEmail("user@example.com")).willReturn(Optional.of(user));
         given(cosmeticRepository.findAllByUserId(1L)).willReturn(List.of());
 
-        assertThatThrownBy(() -> routineService.create("user@example.com", makeRequest(TimeOfDay.AM)))
+        assertThatThrownBy(() -> routineService.create("user@example.com", new CreateRoutineCommand(TimeOfDay.AM)))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("등록된 화장품이 없어");
 
@@ -101,9 +97,9 @@ class RoutineServiceTest {
         given(llmClient.recommendRoutine(any(), any(), any()))
                 .willReturn(makeLlmResult("루틴", "설명", 99L, 1));
 
-        RoutineResponse response = routineService.create("user@example.com", makeRequest(TimeOfDay.AM));
+        RoutineResult response = routineService.create("user@example.com", new CreateRoutineCommand(TimeOfDay.AM));
 
-        assertThat(response.getSteps()).isEmpty();
+        assertThat(response.steps()).isEmpty();
     }
 
     // ── 루틴 조회 ───────────────────────────────────────────────────
@@ -115,10 +111,10 @@ class RoutineServiceTest {
         given(userRepository.findByEmail("user@example.com")).willReturn(Optional.of(user));
         given(routineRepository.findAllByUserId(1L)).willReturn(List.of(routine));
 
-        List<RoutineResponse> result = routineService.findAll("user@example.com");
+        List<RoutineResult> result = routineService.findAll("user@example.com");
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getName()).isEqualTo("아침 루틴");
+        assertThat(result.get(0).name()).isEqualTo("아침 루틴");
     }
 
     // ── 루틴 삭제 ───────────────────────────────────────────────────
@@ -196,16 +192,6 @@ class RoutineServiceTest {
                     .build();
             setField(r, "id", id);
             return r;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private RoutineRequest makeRequest(TimeOfDay timeOfDay) {
-        try {
-            RoutineRequest req = new RoutineRequest();
-            setField(req, "timeOfDay", timeOfDay);
-            return req;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

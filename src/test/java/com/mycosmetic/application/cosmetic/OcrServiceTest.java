@@ -1,11 +1,8 @@
 package com.mycosmetic.application.cosmetic;
-import com.mycosmetic.application.port.out.OcrPort;
-import com.mycosmetic.application.port.out.LlmPort;
-import com.mycosmetic.application.port.out.FileStoragePort;
 
-import com.mycosmetic.adapter.in.web.dto.request.CosmeticRequest;
-import com.mycosmetic.adapter.in.web.dto.response.CosmeticResponse;
-import com.mycosmetic.application.cosmetic.OcrParseResult;
+import com.mycosmetic.application.port.out.FileStoragePort;
+import com.mycosmetic.application.port.out.LlmPort;
+import com.mycosmetic.application.port.out.OcrPort;
 import com.mycosmetic.domain.cosmetic.Cosmetic;
 import com.mycosmetic.domain.cosmetic.CosmeticCategory;
 import com.mycosmetic.domain.user.SkinType;
@@ -44,18 +41,18 @@ class OcrServiceTest {
     private CosmeticService cosmeticService;
 
     @Test
-    @DisplayName("confidence가 high이면 자동 저장하고 CosmeticResponse를 반환한다")
+    @DisplayName("confidence가 high이면 자동 저장하고 CosmeticResult를 반환한다")
     void process_highConfidence_autoSave() throws InterruptedException {
         given(fileStorageService.store(any())).willReturn("/uploads/front.jpg");
         given(ocrClient.extractText(any())).willReturn("OCR 텍스트");
         given(llmClient.parseCosmetic(anyString())).willReturn(makeParseResult("high"));
-        given(cosmeticService.save(anyString(), any(CosmeticRequest.class), anyString()))
-                .willReturn(makeCosmeticResponse());
+        given(cosmeticService.save(anyString(), any(SaveCosmeticCommand.class)))
+                .willReturn(makeCosmeticResult());
 
         Object result = ocrService.process("user@example.com", mockFile("front"), mockFile("back"));
 
-        assertThat(result).isInstanceOf(CosmeticResponse.class);
-        verify(cosmeticService).save(anyString(), any(CosmeticRequest.class), anyString());
+        assertThat(result).isInstanceOf(CosmeticResult.class);
+        verify(cosmeticService).save(anyString(), any(SaveCosmeticCommand.class));
     }
 
     @Test
@@ -68,7 +65,7 @@ class OcrServiceTest {
         Object result = ocrService.process("user@example.com", mockFile("front"), mockFile("back"));
 
         assertThat(result).isInstanceOf(OcrParseResult.class);
-        verify(cosmeticService, never()).save(anyString(), any(CosmeticRequest.class), anyString());
+        verify(cosmeticService, never()).save(anyString(), any(SaveCosmeticCommand.class));
     }
 
     // ── 헬퍼 ──────────────────────────────────────────────────────
@@ -87,14 +84,14 @@ class OcrServiceTest {
         }
     }
 
-    private CosmeticResponse makeCosmeticResponse() {
+    private CosmeticResult makeCosmeticResult() {
         User user = User.builder()
                 .email("user@example.com").password("encoded")
                 .nickname("테스터").skinType(SkinType.NORMAL).build();
         Cosmetic cosmetic = Cosmetic.builder()
                 .user(user).name("토너").brand("이니스프리")
                 .category(CosmeticCategory.SKIN).ingredients("정제수").build();
-        return new CosmeticResponse(cosmetic);
+        return CosmeticResult.from(cosmetic);
     }
 
     private MockMultipartFile mockFile(String name) {

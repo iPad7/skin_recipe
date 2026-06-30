@@ -1,22 +1,18 @@
 package com.mycosmetic.application.chat;
-import com.mycosmetic.application.port.out.VectorStorePort;
-import com.mycosmetic.application.port.out.LlmPort;
 
-import com.mycosmetic.adapter.in.web.dto.request.ChatRequest;
-import com.mycosmetic.adapter.in.web.dto.response.ChatMessageResponse;
-import com.mycosmetic.adapter.in.web.dto.response.ChatResponse;
-import com.mycosmetic.adapter.in.web.dto.response.ChatSessionResponse;
+import com.mycosmetic.application.port.out.ChatMessageRepository;
+import com.mycosmetic.application.port.out.ChatSessionRepository;
+import com.mycosmetic.application.port.out.CosmeticRepository;
+import com.mycosmetic.application.port.out.LlmPort;
+import com.mycosmetic.application.port.out.RoutineRepository;
+import com.mycosmetic.application.port.out.UserRepository;
+import com.mycosmetic.application.port.out.VectorStorePort;
 import com.mycosmetic.domain.chat.ChatMessage;
 import com.mycosmetic.domain.chat.ChatSession;
-import com.mycosmetic.domain.cosmetic.Cosmetic;
 import com.mycosmetic.domain.chat.Role;
+import com.mycosmetic.domain.cosmetic.Cosmetic;
 import com.mycosmetic.domain.routine.Routine;
 import com.mycosmetic.domain.user.User;
-import com.mycosmetic.adapter.out.persistence.ChatMessageRepository;
-import com.mycosmetic.adapter.out.persistence.ChatSessionRepository;
-import com.mycosmetic.adapter.out.persistence.CosmeticRepository;
-import com.mycosmetic.adapter.out.persistence.RoutineRepository;
-import com.mycosmetic.adapter.out.persistence.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -39,17 +35,17 @@ public class ChatService {
     private final UserRepository userRepository;
 
     @Transactional
-    public ChatSessionResponse createSession(String email) {
+    public ChatSessionResult createSession(String email) {
         User user = getUser(email);
         ChatSession session = ChatSession.builder().user(user).build();
         chatSessionRepository.saveAndFlush(session);
-        return new ChatSessionResponse(session);
+        return ChatSessionResult.from(session);
     }
 
-    public List<ChatSessionResponse> findAllSessions(String email) {
+    public List<ChatSessionResult> findAllSessions(String email) {
         User user = getUser(email);
         return chatSessionRepository.findAllByUserIdOrderByCreatedAtDesc(user.getId()).stream()
-                .map(ChatSessionResponse::new)
+                .map(ChatSessionResult::from)
                 .toList();
     }
 
@@ -65,7 +61,7 @@ public class ChatService {
     }
 
     @Transactional
-    public ChatResponse chat(String email, UUID sessionId, ChatRequest request) {
+    public ChatResult chat(String email, UUID sessionId, ChatCommand command) {
         User user = getUser(email);
         ChatSession session = chatSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new IllegalArgumentException("세션을 찾을 수 없습니다."));
@@ -74,7 +70,7 @@ public class ChatService {
         }
 
         // 1. 관련 화장품 벡터 검색 (topK=5) — 현재 유저 소유 화장품만 필터링
-        List<Long> relatedIds = vectorStoreService.search(request.getMessage(), 5);
+        List<Long> relatedIds = vectorStoreService.search(command.message(), 5);
         List<Cosmetic> relatedCosmetics = relatedIds.isEmpty()
                 ? List.of()
                 : cosmeticRepository.findAllById(relatedIds).stream()
@@ -93,18 +89,18 @@ public class ChatService {
         List<ChatMessage> history = allMessages.subList(fromIndex, allMessages.size());
 
         // 5. LLM 호출
-        String answer = llmClient.chat(systemPrompt, history, request.getMessage());
+        String answer = llmClient.chat(systemPrompt, history, command.message());
 
         // 6. 질문 + 답변 저장
         chatMessageRepository.save(ChatMessage.builder()
-                .session(session).role(Role.USER).content(request.getMessage()).build());
+                .session(session).role(Role.USER).content(command.message()).build());
         chatMessageRepository.save(ChatMessage.builder()
                 .session(session).role(Role.ASSISTANT).content(answer).build());
 
-        return new ChatResponse(answer);
+        return new ChatResult(answer);
     }
 
-    public List<ChatMessageResponse> getHistory(String email, UUID sessionId) {
+    public List<ChatMessageResult> getHistory(String email, UUID sessionId) {
         User user = getUser(email);
         ChatSession session = chatSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new IllegalArgumentException("세션을 찾을 수 없습니다."));
@@ -112,7 +108,7 @@ public class ChatService {
             throw new IllegalArgumentException("접근 권한이 없습니다.");
         }
         return chatMessageRepository.findAllBySessionIdOrderByCreatedAtAsc(sessionId).stream()
-                .map(ChatMessageResponse::new)
+                .map(ChatMessageResult::from)
                 .toList();
     }
 

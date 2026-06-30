@@ -2,7 +2,7 @@ package com.mycosmetic.adapter.in.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mycosmetic.common.config.SecurityConfig;
-import com.mycosmetic.adapter.in.web.dto.response.LoginResponse;
+import com.mycosmetic.application.user.LoginResult;
 import com.mycosmetic.common.security.JwtUtil;
 import com.mycosmetic.common.security.UserDetailsServiceImpl;
 import com.mycosmetic.application.user.AuthService;
@@ -102,7 +102,7 @@ class AuthControllerTest {
     @Test
     @DisplayName("올바른 로그인 요청이면 200과 accessToken을 반환한다")
     void login_success() throws Exception {
-        given(authService.login(any())).willReturn(new LoginResponse("mock-jwt-token"));
+        given(authService.login(any())).willReturn(new LoginResult("mock-jwt-token"));
 
         Map<String, String> body = Map.of(
                 "email", "user@example.com",

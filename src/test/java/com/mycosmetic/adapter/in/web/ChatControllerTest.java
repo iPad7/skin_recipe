@@ -2,12 +2,9 @@ package com.mycosmetic.adapter.in.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mycosmetic.common.config.SecurityConfig;
-import com.mycosmetic.adapter.in.web.dto.response.ChatMessageResponse;
-import com.mycosmetic.adapter.in.web.dto.response.ChatResponse;
-import com.mycosmetic.adapter.in.web.dto.response.ChatSessionResponse;
-import com.mycosmetic.domain.user.*;
-import com.mycosmetic.domain.cosmetic.*;
-import com.mycosmetic.domain.routine.*;
+import com.mycosmetic.application.chat.ChatMessageResult;
+import com.mycosmetic.application.chat.ChatResult;
+import com.mycosmetic.application.chat.ChatSessionResult;
 import com.mycosmetic.domain.chat.*;
 import com.mycosmetic.common.security.JwtUtil;
 import com.mycosmetic.common.security.UserDetailsServiceImpl;
@@ -62,7 +59,7 @@ class ChatControllerTest {
     @WithMockUser
     @DisplayName("새 채팅 세션을 생성한다")
     void createSession_success() throws Exception {
-        given(chatService.createSession(anyString())).willReturn(makeChatSessionResponse());
+        given(chatService.createSession(anyString())).willReturn(makeChatSessionResult());
 
         mockMvc.perform(post("/chat/sessions"))
                 .andExpect(status().isOk())
@@ -75,7 +72,7 @@ class ChatControllerTest {
     @WithMockUser
     @DisplayName("내 채팅 세션 목록을 조회한다")
     void findAllSessions_success() throws Exception {
-        given(chatService.findAllSessions(anyString())).willReturn(List.of(makeChatSessionResponse()));
+        given(chatService.findAllSessions(anyString())).willReturn(List.of(makeChatSessionResult()));
 
         mockMvc.perform(get("/chat/sessions"))
                 .andExpect(status().isOk())
@@ -89,7 +86,7 @@ class ChatControllerTest {
     @DisplayName("질문을 보내면 AI 답변을 반환한다")
     void chat_success() throws Exception {
         given(chatService.chat(anyString(), any(UUID.class), any()))
-                .willReturn(new ChatResponse("토너를 추천합니다"));
+                .willReturn(new ChatResult("토너를 추천합니다"));
 
         mockMvc.perform(post("/chat/sessions/{sessionId}/messages", SESSION_ID)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -115,7 +112,7 @@ class ChatControllerTest {
     @DisplayName("세션의 대화 히스토리를 조회한다")
     void getHistory_success() throws Exception {
         given(chatService.getHistory(anyString(), any(UUID.class)))
-                .willReturn(List.of(makeChatMessageResponse(Role.USER, "질문")));
+                .willReturn(List.of(makeChatMessageResult(Role.USER, "질문")));
 
         mockMvc.perform(get("/chat/sessions/{sessionId}/messages", SESSION_ID))
                 .andExpect(status().isOk())
@@ -135,49 +132,11 @@ class ChatControllerTest {
 
     // ── 헬퍼 ──────────────────────────────────────────────────────
 
-    private ChatSessionResponse makeChatSessionResponse() {
-        try {
-            User user = User.builder()
-                    .email("user@example.com").password("encoded").nickname("테스터")
-                    .skinType(SkinType.NORMAL).build();
-            ChatSession session = ChatSession.builder().user(user).build();
-            setField(session, "id", SESSION_ID);
-            setField(session, "createdAt", LocalDateTime.now());
-            return new ChatSessionResponse(session);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    private ChatSessionResult makeChatSessionResult() {
+        return new ChatSessionResult(SESSION_ID, LocalDateTime.now());
     }
 
-    private ChatMessageResponse makeChatMessageResponse(Role role, String content) {
-        try {
-            User user = User.builder()
-                    .email("user@example.com").password("encoded").nickname("테스터")
-                    .skinType(SkinType.NORMAL).build();
-            ChatSession session = ChatSession.builder().user(user).build();
-            setField(session, "id", SESSION_ID);
-            ChatMessage message = ChatMessage.builder()
-                    .session(session).role(role).content(content).build();
-            setField(message, "id", 1L);
-            setField(message, "createdAt", LocalDateTime.now());
-            return new ChatMessageResponse(message);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void setField(Object target, String fieldName, Object value) throws Exception {
-        Class<?> clazz = target.getClass();
-        while (clazz != null) {
-            try {
-                var field = clazz.getDeclaredField(fieldName);
-                field.setAccessible(true);
-                field.set(target, value);
-                return;
-            } catch (NoSuchFieldException e) {
-                clazz = clazz.getSuperclass();
-            }
-        }
-        throw new NoSuchFieldException(fieldName);
+    private ChatMessageResult makeChatMessageResult(Role role, String content) {
+        return new ChatMessageResult(1L, role, content, LocalDateTime.now());
     }
 }

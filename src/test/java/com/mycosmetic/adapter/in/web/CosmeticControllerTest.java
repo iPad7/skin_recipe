@@ -2,7 +2,7 @@ package com.mycosmetic.adapter.in.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mycosmetic.common.config.SecurityConfig;
-import com.mycosmetic.adapter.in.web.dto.response.CosmeticResponse;
+import com.mycosmetic.application.cosmetic.CosmeticResult;
 import com.mycosmetic.domain.cosmetic.Cosmetic;
 import com.mycosmetic.domain.cosmetic.CosmeticCategory;
 import com.mycosmetic.domain.user.SkinType;
@@ -69,7 +69,7 @@ class CosmeticControllerTest {
     @WithMockUser
     @DisplayName("내 화장품 목록을 조회한다")
     void findAll() throws Exception {
-        given(cosmeticService.findAll(anyString())).willReturn(List.of(makeCosmeticResponse()));
+        given(cosmeticService.findAll(anyString())).willReturn(List.of(makeCosmeticResult()));
 
         mockMvc.perform(get("/cosmetics"))
                 .andExpect(status().isOk())
@@ -82,7 +82,7 @@ class CosmeticControllerTest {
     @WithMockUser
     @DisplayName("화장품을 수동 등록한다")
     void save() throws Exception {
-        given(cosmeticService.save(anyString(), any())).willReturn(makeCosmeticResponse());
+        given(cosmeticService.save(anyString(), any())).willReturn(makeCosmeticResult());
 
         Map<String, Object> body = Map.of(
                 "name", "토너",
@@ -114,7 +114,7 @@ class CosmeticControllerTest {
     @WithMockUser
     @DisplayName("화장품을 수정한다")
     void update() throws Exception {
-        given(cosmeticService.update(anyString(), any(), any())).willReturn(makeCosmeticResponse());
+        given(cosmeticService.update(anyString(), any(), any())).willReturn(makeCosmeticResult());
 
         Map<String, Object> body = Map.of("name", "토너", "category", "SKIN");
 
@@ -136,13 +136,13 @@ class CosmeticControllerTest {
 
     // ── 헬퍼 ──────────────────────────────────────────────────────
 
-    private CosmeticResponse makeCosmeticResponse() {
+    private CosmeticResult makeCosmeticResult() {
         User user = User.builder()
                 .email("user@example.com").password("encoded")
                 .nickname("테스터").skinType(SkinType.NORMAL).build();
         Cosmetic cosmetic = Cosmetic.builder()
                 .user(user).name("토너").brand("이니스프리")
                 .category(CosmeticCategory.SKIN).ingredients("정제수").build();
-        return new CosmeticResponse(cosmetic);
+        return CosmeticResult.from(cosmetic);
     }
 }

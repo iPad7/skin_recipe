@@ -1,14 +1,11 @@
 package com.mycosmetic.application.cosmetic;
-import com.mycosmetic.application.port.out.VectorStorePort;
 
-import com.mycosmetic.adapter.in.web.dto.request.CosmeticRequest;
-import com.mycosmetic.adapter.in.web.dto.request.OcrConfirmRequest;
-import com.mycosmetic.adapter.in.web.dto.response.CosmeticResponse;
+import com.mycosmetic.application.port.out.CosmeticRepository;
+import com.mycosmetic.application.port.out.RoutineCosmeticRepository;
+import com.mycosmetic.application.port.out.UserRepository;
+import com.mycosmetic.application.port.out.VectorStorePort;
 import com.mycosmetic.domain.cosmetic.Cosmetic;
 import com.mycosmetic.domain.user.User;
-import com.mycosmetic.adapter.out.persistence.CosmeticRepository;
-import com.mycosmetic.adapter.out.persistence.RoutineCosmeticRepository;
-import com.mycosmetic.adapter.out.persistence.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -47,38 +44,34 @@ public class CosmeticService {
         log.info("벡터 스토어 초기화 완료: {}/{} 건 로드됨", success, all.size());
     }
 
-    public List<CosmeticResponse> findAll(String email) {
+    public List<CosmeticResult> findAll(String email) {
         User user = getUser(email);
         return cosmeticRepository.findAllByUserId(user.getId()).stream()
-                .map(CosmeticResponse::new)
+                .map(CosmeticResult::from)
                 .toList();
     }
 
-    public CosmeticResponse save(String email, CosmeticRequest request) {
-        return save(email, request, null);
-    }
-
-    public CosmeticResponse save(String email, CosmeticRequest request, String imageUrl) {
+    public CosmeticResult save(String email, SaveCosmeticCommand command) {
         User user = getUser(email);
         Cosmetic cosmetic = Cosmetic.builder()
                 .user(user)
-                .name(request.getName())
-                .brand(request.getBrand())
-                .category(request.getCategory())
-                .ingredients(request.getIngredients())
-                .imageUrl(imageUrl)
+                .name(command.name())
+                .brand(command.brand())
+                .category(command.category())
+                .ingredients(command.ingredients())
+                .imageUrl(command.imageUrl())
                 .build();
         Cosmetic saved = cosmeticRepository.save(cosmetic);
         vectorStoreService.addVector(saved.getId(), toEmbedText(saved));
-        return new CosmeticResponse(saved);
+        return CosmeticResult.from(saved);
     }
 
     @Transactional
-    public CosmeticResponse update(String email, Long cosmeticId, CosmeticRequest request) {
+    public CosmeticResult update(String email, Long cosmeticId, UpdateCosmeticCommand command) {
         Cosmetic cosmetic = getOwnedCosmetic(email, cosmeticId);
-        cosmetic.update(request.getName(), request.getBrand(), request.getCategory(), request.getIngredients());
+        cosmetic.update(command.name(), command.brand(), command.category(), command.ingredients());
         vectorStoreService.addVector(cosmetic.getId(), toEmbedText(cosmetic));
-        return new CosmeticResponse(cosmetic);
+        return CosmeticResult.from(cosmetic);
     }
 
     public void delete(String email, Long cosmeticId) {
@@ -90,19 +83,9 @@ public class CosmeticService {
         vectorStoreService.removeVector(cosmeticId);
     }
 
-    public CosmeticResponse confirmOcr(String email, OcrConfirmRequest request) {
-        User user = getUser(email);
-        Cosmetic cosmetic = Cosmetic.builder()
-                .user(user)
-                .name(request.getName())
-                .brand(request.getBrand())
-                .category(request.getCategory())
-                .ingredients(request.getIngredients())
-                .imageUrl(request.getImageUrl())
-                .build();
-        Cosmetic saved = cosmeticRepository.save(cosmetic);
-        vectorStoreService.addVector(saved.getId(), toEmbedText(saved));
-        return new CosmeticResponse(saved);
+    /** OCR 확인(HITL) 저장 — save와 동일 동작 */
+    public CosmeticResult confirmOcr(String email, SaveCosmeticCommand command) {
+        return save(email, command);
     }
 
     private String toEmbedText(Cosmetic c) {

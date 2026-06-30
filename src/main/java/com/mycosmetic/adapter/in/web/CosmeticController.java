@@ -3,8 +3,11 @@ package com.mycosmetic.adapter.in.web;
 import com.mycosmetic.adapter.in.web.dto.request.CosmeticRequest;
 import com.mycosmetic.adapter.in.web.dto.request.OcrConfirmRequest;
 import com.mycosmetic.adapter.in.web.dto.response.CosmeticResponse;
+import com.mycosmetic.application.cosmetic.CosmeticResult;
 import com.mycosmetic.application.cosmetic.CosmeticService;
 import com.mycosmetic.application.cosmetic.OcrService;
+import com.mycosmetic.application.cosmetic.SaveCosmeticCommand;
+import com.mycosmetic.application.cosmetic.UpdateCosmeticCommand;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,14 +29,19 @@ public class CosmeticController {
     @GetMapping
     public ResponseEntity<List<CosmeticResponse>> findAll(
             @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(cosmeticService.findAll(userDetails.getUsername()));
+        List<CosmeticResponse> body = cosmeticService.findAll(userDetails.getUsername()).stream()
+                .map(CosmeticResponse::from)
+                .toList();
+        return ResponseEntity.ok(body);
     }
 
     @PostMapping
     public ResponseEntity<CosmeticResponse> save(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody CosmeticRequest request) {
-        return ResponseEntity.ok(cosmeticService.save(userDetails.getUsername(), request));
+        CosmeticResult result = cosmeticService.save(userDetails.getUsername(), new SaveCosmeticCommand(
+                request.getName(), request.getBrand(), request.getCategory(), request.getIngredients(), null));
+        return ResponseEntity.ok(CosmeticResponse.from(result));
     }
 
     @PutMapping("/{id}")
@@ -41,7 +49,9 @@ public class CosmeticController {
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long id,
             @Valid @RequestBody CosmeticRequest request) {
-        return ResponseEntity.ok(cosmeticService.update(userDetails.getUsername(), id, request));
+        CosmeticResult result = cosmeticService.update(userDetails.getUsername(), id, new UpdateCosmeticCommand(
+                request.getName(), request.getBrand(), request.getCategory(), request.getIngredients()));
+        return ResponseEntity.ok(CosmeticResponse.from(result));
     }
 
     @DeleteMapping("/{id}")
@@ -52,7 +62,7 @@ public class CosmeticController {
         return ResponseEntity.noContent().build();
     }
 
-    // confidence: high → CosmeticResponse, low → OcrParseResult
+    // confidence: high → CosmeticResult, low → OcrParseResult (둘 다 application 모델 직접 직렬화)
     @PostMapping("/ocr")
     public ResponseEntity<Object> ocr(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -66,7 +76,9 @@ public class CosmeticController {
     public ResponseEntity<CosmeticResponse> confirmOcr(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody OcrConfirmRequest request) {
-        CosmeticResponse response = cosmeticService.confirmOcr(userDetails.getUsername(), request);
-        return ResponseEntity.ok(response);
+        CosmeticResult result = cosmeticService.confirmOcr(userDetails.getUsername(), new SaveCosmeticCommand(
+                request.getName(), request.getBrand(), request.getCategory(),
+                request.getIngredients(), request.getImageUrl()));
+        return ResponseEntity.ok(CosmeticResponse.from(result));
     }
 }

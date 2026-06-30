@@ -1,16 +1,13 @@
 package com.mycosmetic.application.routine;
-import com.mycosmetic.application.port.out.LlmPort;
 
-import com.mycosmetic.adapter.in.web.dto.request.RoutineRequest;
-import com.mycosmetic.application.routine.RoutineLlmResult;
-import com.mycosmetic.adapter.in.web.dto.response.RoutineResponse;
+import com.mycosmetic.application.port.out.CosmeticRepository;
+import com.mycosmetic.application.port.out.LlmPort;
+import com.mycosmetic.application.port.out.RoutineRepository;
+import com.mycosmetic.application.port.out.UserRepository;
 import com.mycosmetic.domain.cosmetic.Cosmetic;
 import com.mycosmetic.domain.routine.Routine;
 import com.mycosmetic.domain.routine.RoutineCosmetic;
 import com.mycosmetic.domain.user.User;
-import com.mycosmetic.adapter.out.persistence.CosmeticRepository;
-import com.mycosmetic.adapter.out.persistence.RoutineRepository;
-import com.mycosmetic.adapter.out.persistence.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -31,7 +28,7 @@ public class RoutineService {
     private final LlmPort llmClient;
 
     @Transactional
-    public RoutineResponse create(String email, RoutineRequest request) {
+    public RoutineResult create(String email, CreateRoutineCommand command) {
         User user = getUser(email);
         List<Cosmetic> cosmetics = cosmeticRepository.findAllByUserId(user.getId());
 
@@ -39,12 +36,12 @@ public class RoutineService {
             throw new IllegalStateException("등록된 화장품이 없어 루틴을 추천할 수 없습니다.");
         }
 
-        RoutineLlmResult llmResult = llmClient.recommendRoutine(user, cosmetics, request.getTimeOfDay());
+        RoutineLlmResult llmResult = llmClient.recommendRoutine(user, cosmetics, command.timeOfDay());
 
         Routine routine = Routine.builder()
                 .user(user)
                 .name(llmResult.getName())
-                .timeOfDay(request.getTimeOfDay())
+                .timeOfDay(command.timeOfDay())
                 .description(llmResult.getDescription())
                 .build();
         routineRepository.save(routine);
@@ -64,13 +61,13 @@ public class RoutineService {
             );
         }
 
-        return new RoutineResponse(routine);
+        return RoutineResult.from(routine);
     }
 
-    public List<RoutineResponse> findAll(String email) {
+    public List<RoutineResult> findAll(String email) {
         User user = getUser(email);
         return routineRepository.findAllByUserId(user.getId()).stream()
-                .map(RoutineResponse::new)
+                .map(RoutineResult::from)
                 .toList();
     }
 
