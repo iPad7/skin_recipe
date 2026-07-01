@@ -8,16 +8,16 @@
 
 # 특정 클래스만 실행
 ./gradlew test --tests "com.mycosmetic.security.JwtUtilTest"
-./gradlew test --tests "com.mycosmetic.service.AuthServiceTest"
-./gradlew test --tests "com.mycosmetic.controller.AuthControllerTest"
-./gradlew test --tests "com.mycosmetic.service.CosmeticServiceTest"
-./gradlew test --tests "com.mycosmetic.controller.CosmeticControllerTest"
-./gradlew test --tests "com.mycosmetic.service.OcrServiceTest"
-./gradlew test --tests "com.mycosmetic.service.FileStorageServiceTest"
-./gradlew test --tests "com.mycosmetic.service.InMemoryVectorStoreServiceTest"
-./gradlew test --tests "com.mycosmetic.service.RoutineServiceTest"
-./gradlew test --tests "com.mycosmetic.service.ChatServiceTest"
-./gradlew test --tests "com.mycosmetic.controller.ChatControllerTest"
+./gradlew test --tests "com.mycosmetic.application.user.AuthServiceTest"
+./gradlew test --tests "com.mycosmetic.adapter.in.web.AuthControllerTest"
+./gradlew test --tests "com.mycosmetic.application.cosmetic.CosmeticServiceTest"
+./gradlew test --tests "com.mycosmetic.adapter.in.web.CosmeticControllerTest"
+./gradlew test --tests "com.mycosmetic.application.cosmetic.OcrServiceTest"
+./gradlew test --tests "com.mycosmetic.adapter.out.storage.FileStorageServiceTest"
+./gradlew test --tests "com.mycosmetic.adapter.out.vector.InMemoryVectorStoreServiceTest"
+./gradlew test --tests "com.mycosmetic.application.routine.RoutineServiceTest"
+./gradlew test --tests "com.mycosmetic.application.chat.ChatServiceTest"
+./gradlew test --tests "com.mycosmetic.adapter.in.web.ChatControllerTest"
 
 # 캐시 무시하고 강제 재실행
 ./gradlew test --rerun
@@ -48,8 +48,8 @@ open build/reports/tests/test/index.html
 ---
 
 #### `AuthServiceTest`
-**위치:** `src/test/java/com/mycosmetic/service/AuthServiceTest.java`
-**Mock:** `UserRepository`, `CosmeticRepository`, `RoutineRepository`, `ChatSessionRepository`, `VectorStoreService`, `BCryptPasswordEncoder`, `JwtUtil`
+**위치:** `src/test/java/com/mycosmetic/application/user/AuthServiceTest.java`
+**Mock:** `UserRepository`, `CosmeticRepository`, `RoutineRepository`, `ChatSessionRepository`, `VectorStorePort`, `BCryptPasswordEncoder`, `JwtUtil`
 **목적:** 회원가입 / 로그인 / 회원 탈퇴 비즈니스 로직 확인
 
 | 테스트명 | 검증 내용 |
@@ -64,7 +64,7 @@ open build/reports/tests/test/index.html
 ---
 
 #### `CosmeticServiceTest`
-**위치:** `src/test/java/com/mycosmetic/service/CosmeticServiceTest.java`
+**위치:** `src/test/java/com/mycosmetic/application/cosmetic/CosmeticServiceTest.java`
 **Mock:** `CosmeticRepository`, `UserRepository`
 **목적:** 화장품 CRUD 비즈니스 로직 및 소유자 검증 확인
 
@@ -80,7 +80,7 @@ open build/reports/tests/test/index.html
 ---
 
 #### `InMemoryVectorStoreServiceTest`
-**위치:** `src/test/java/com/mycosmetic/service/InMemoryVectorStoreServiceTest.java`
+**위치:** `src/test/java/com/mycosmetic/adapter/out/vector/InMemoryVectorStoreServiceTest.java`
 **Mock:** `UpstageEmbeddingClient`
 **목적:** 코사인 유사도 기반 벡터 검색 로직, 저장/삭제/덮어쓰기 동작 확인
 
@@ -96,8 +96,8 @@ open build/reports/tests/test/index.html
 ---
 
 #### `RoutineServiceTest`
-**위치:** `src/test/java/com/mycosmetic/service/RoutineServiceTest.java`
-**Mock:** `RoutineRepository`, `CosmeticRepository`, `UserRepository`, `UpstageLlmClient`
+**위치:** `src/test/java/com/mycosmetic/application/routine/RoutineServiceTest.java`
+**Mock:** `RoutineRepository`, `CosmeticRepository`, `UserRepository`, `LlmPort`
 **목적:** 루틴 생성(LLM 연동), 조회, 삭제, 소유자 검증, 엣지 케이스 확인
 
 | 테스트명 | 검증 내용 |
@@ -113,8 +113,8 @@ open build/reports/tests/test/index.html
 ---
 
 #### `OcrServiceTest`
-**위치:** `src/test/java/com/mycosmetic/service/OcrServiceTest.java`
-**Mock:** `UpstageOcrClient`, `UpstageLlmClient`, `FileStorageService`, `CosmeticService` (실제 외부 API 미호출)
+**위치:** `src/test/java/com/mycosmetic/application/cosmetic/OcrServiceTest.java`
+**Mock:** `UpstageOcrClient`, `LlmPort`, `FileStorageService`, `CosmeticService` (실제 외부 API 미호출)
 **목적:** confidence 값에 따른 자동저장 / HITL 분기 로직 확인
 
 | 테스트명 | 검증 내용 |
@@ -125,7 +125,7 @@ open build/reports/tests/test/index.html
 ---
 
 #### `FileStorageServiceTest`
-**위치:** `src/test/java/com/mycosmetic/service/FileStorageServiceTest.java`
+**위치:** `src/test/java/com/mycosmetic/adapter/out/storage/FileStorageServiceTest.java`
 **비고:** `@TempDir`로 임시 디렉토리 사용 — 실제 `/uploads/` 미사용
 **목적:** 파일 저장 경로 생성 및 실제 디스크 저장 동작 확인
 
@@ -138,8 +138,8 @@ open build/reports/tests/test/index.html
 ---
 
 #### `ChatServiceTest`
-**위치:** `src/test/java/com/mycosmetic/service/ChatServiceTest.java`
-**Mock:** `ChatSessionRepository`, `ChatMessageRepository`, `CosmeticRepository`, `RoutineRepository`, `VectorStoreService`, `UpstageLlmClient`, `UserRepository`
+**위치:** `src/test/java/com/mycosmetic/application/chat/ChatServiceTest.java`
+**Mock:** `ChatSessionRepository`, `ChatMessageRepository`, `CosmeticRepository`, `RoutineRepository`, `VectorStorePort`, `LlmPort`, `UserRepository`
 **목적:** 세션 CRUD, RAG 파이프라인, 루틴 컨텍스트 주입, 히스토리 제한, 소유자 검증 확인
 
 | 테스트명 | 검증 내용 |
@@ -166,7 +166,7 @@ open build/reports/tests/test/index.html
 ---
 
 #### `AuthControllerTest`
-**위치:** `src/test/java/com/mycosmetic/controller/AuthControllerTest.java`
+**위치:** `src/test/java/com/mycosmetic/adapter/in/web/AuthControllerTest.java`
 **Mock:** `AuthService`, `JwtUtil`, `UserDetailsServiceImpl`
 **목적:** 회원가입 / 로그인 HTTP 요청/응답, 상태 코드, Validation 확인
 
@@ -181,7 +181,7 @@ open build/reports/tests/test/index.html
 ---
 
 #### `CosmeticControllerTest`
-**위치:** `src/test/java/com/mycosmetic/controller/CosmeticControllerTest.java`
+**위치:** `src/test/java/com/mycosmetic/adapter/in/web/CosmeticControllerTest.java`
 **Mock:** `CosmeticService`, `OcrService`, `JwtUtil`, `UserDetailsServiceImpl`
 **목적:** JWT 인증이 적용된 화장품 CRUD API HTTP 요청/응답 및 인증 처리 확인
 
@@ -197,7 +197,7 @@ open build/reports/tests/test/index.html
 ---
 
 #### `ChatControllerTest`
-**위치:** `src/test/java/com/mycosmetic/controller/ChatControllerTest.java`
+**위치:** `src/test/java/com/mycosmetic/adapter/in/web/ChatControllerTest.java`
 **Mock:** `ChatService`, `JwtUtil`, `UserDetailsServiceImpl`
 **목적:** JWT 인증이 적용된 채팅 세션 API HTTP 요청/응답 및 인증 처리 확인
 
@@ -236,8 +236,8 @@ open build/reports/tests/test/index.html
 
 ```
 com.mycosmetic.security.JwtUtilTest                    4/4 ✅
-com.mycosmetic.service.AuthServiceTest                 5/5 ✅
-com.mycosmetic.controller.AuthControllerTest           5/5 ✅
+com.mycosmetic.application.user.AuthServiceTest                 5/5 ✅
+com.mycosmetic.adapter.in.web.AuthControllerTest           5/5 ✅
 com.mycosmetic.SkinRecipeApplicationTests              1/1 ✅
 
 결과: 15/15 통과  |  누적: 15/15
@@ -250,10 +250,10 @@ com.mycosmetic.SkinRecipeApplicationTests              1/1 ✅
 #### 2026-03-25 — Phase 2 완료 후 (32개)
 
 ```
-com.mycosmetic.controller.CosmeticControllerTest       6/6 ✅
-com.mycosmetic.service.CosmeticServiceTest             6/6 ✅
-com.mycosmetic.service.OcrServiceTest                  2/2 ✅
-com.mycosmetic.service.FileStorageServiceTest          3/3 ✅
+com.mycosmetic.adapter.in.web.CosmeticControllerTest       6/6 ✅
+com.mycosmetic.application.cosmetic.CosmeticServiceTest             6/6 ✅
+com.mycosmetic.application.cosmetic.OcrServiceTest                  2/2 ✅
+com.mycosmetic.adapter.out.storage.FileStorageServiceTest          3/3 ✅
 
 결과: 17/17 통과  |  누적: 32/32
 ```
@@ -269,13 +269,13 @@ com.mycosmetic.service.FileStorageServiceTest          3/3 ✅
 #### 2026-03-25 — Phase 3 완료 후 (45개)
 
 ```
-com.mycosmetic.service.InMemoryVectorStoreServiceTest  6/6 ✅
-com.mycosmetic.service.RoutineServiceTest              7/7 ✅
+com.mycosmetic.adapter.out.vector.InMemoryVectorStoreServiceTest  6/6 ✅
+com.mycosmetic.application.routine.RoutineServiceTest              7/7 ✅
 
 결과: 13/13 통과  |  누적: 45/45
 ```
 
-> **비고 1:** `CosmeticService`에 `VectorStoreService` 의존성 추가로 기존 `CosmeticServiceTest` NPE 발생 → `@Mock VectorStoreService` 추가로 해결.
+> **비고 1:** `CosmeticService`에 `VectorStorePort` 의존성 추가로 기존 `CosmeticServiceTest` NPE 발생 → `@Mock VectorStorePort` 추가로 해결.
 >
 > **비고 2:** `ApplicationReadyEvent`에서 시작 시 전체 화장품 임베딩 재로드 시 테스트 DB에 데이터가 있으면 유효하지 않은 API 키로 401 발생 → try-catch로 임베딩 실패 건너뜀 처리.
 >
@@ -286,8 +286,8 @@ com.mycosmetic.service.RoutineServiceTest              7/7 ✅
 #### 2026-03-25 — Phase 4 완료 후 (64개)
 
 ```
-com.mycosmetic.service.ChatServiceTest                 12/12 ✅
-com.mycosmetic.controller.ChatControllerTest            7/7  ✅
+com.mycosmetic.application.chat.ChatServiceTest                 12/12 ✅
+com.mycosmetic.adapter.in.web.ChatControllerTest            7/7  ✅
 
 결과: 19/19 통과  |  누적: 64/64
 ```
@@ -297,7 +297,7 @@ com.mycosmetic.controller.ChatControllerTest            7/7  ✅
 #### 2026-03-27 — 챗봇 루틴 컨텍스트 + 테스트 버그 수정 (68개)
 
 ```
-com.mycosmetic.service.ChatServiceTest                 14/14 ✅  (+2 신규)
+com.mycosmetic.application.chat.ChatServiceTest                 14/14 ✅  (+2 신규)
 
 결과: 4/4 통과  |  누적: 68/68
 ```

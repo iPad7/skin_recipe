@@ -1,6 +1,6 @@
 # Skin Recipe — DB 스키마 정의서
 
-> 코드 기준: `src/main/java/com/mycosmetic/entity/` 엔티티 클래스 직접 분석
+> 코드 기준: `src/main/java/com/mycosmetic/domain/` 엔티티 클래스 직접 분석
 >
 > JPA DDL 전략: `ddl-auto: update`
 

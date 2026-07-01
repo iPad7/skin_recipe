@@ -92,14 +92,33 @@ Solar LLM 호출 (세션 내 최근 10개 메시지 히스토리 포함)
 
 ## 아키텍처 핵심
 
+**Hexagonal (Ports & Adapters)**
+의존 방향을 항상 안쪽(`domain`)을 향하도록 정렬했습니다. 외부 연동(LLM·OCR·Embedding·벡터·파일·DB)은 모두 `application` 계층의 **포트(인터페이스)** 뒤로 숨고, 구현체는 `adapter.out`에서 포트를 구현합니다.
+
+```
+com.mycosmetic
+├── domain/         # 엔티티 + enum (바깥을 모름)
+├── application/    # 유스케이스 서비스 + Command/Result
+│   └── port/out/   # LlmPort, OcrPort, EmbeddingPort, FileStoragePort,
+│                   # VectorStorePort, *Repository (영속성 포트)
+├── adapter/
+│   ├── in/web/     # Controller + Request/Response DTO (웹↔application 매핑)
+│   └── out/        # upstage · vector · storage · persistence 어댑터
+└── common/         # config · security · exception
+```
+
+- `application` 계층은 `adapter`를 전혀 import하지 않습니다 (완전한 의존성 역전).
+- 서비스 입출력은 웹 DTO가 아니라 application 전용 **Command / Result** 레코드를 사용하고, 컨트롤러가 웹 DTO와 매핑합니다.
+- 리포지토리는 **포트(`application/port/out`) + Spring Data(`*JpaRepository`) + 위임 어댑터(`*PersistenceAdapter`)** 3-piece로 분리해 Spring Data를 application에서 숨깁니다.
+
 **SOT 분리**
 MySQL이 단일 진실 원천입니다. 인메모리 벡터는 검색 속도를 위한 사본이며 항상 MySQL 기준으로 동기화됩니다.
 
-**VectorStoreService 전략 패턴**
+**VectorStorePort 전략 패턴**
 ```java
-public interface VectorStoreService {
-    void addVector(Long id, String text);
-    void removeVector(Long id);
+public interface VectorStorePort {
+    void addVector(Long cosmeticId, String text);
+    void removeVector(Long cosmeticId);
     List<Long> search(String query, int topK);
 }
 ```
@@ -148,7 +167,7 @@ export UPSTAGE_API_KEY=your_api_key_here
 |:-----:|-----------|:----:|
 | 1 | 프로젝트 세팅 + User 엔티티 + JWT 인증 | ✅ |
 | 2 | Spring Security + Cosmetic CRUD + OCR 연동 | ✅ |
-| 3 | HITL + Routine + VectorStoreService (InMemory) | ✅ |
+| 3 | HITL + Routine + VectorStore 전략 패턴 (InMemory) | ✅ |
 | 4 | RAG 챗봇 (ChatSession + Embedding + Solar LLM) | ✅ |
 | 5 | 중간 결산 — ERD + API 정의서 | ✅ |
 | 6 | React 프론트엔드 개발 + 백엔드 연동 | ✅ |

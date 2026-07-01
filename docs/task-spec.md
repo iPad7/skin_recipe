@@ -1,5 +1,10 @@
 # Skin Recipe — 작업 명세서
 
+> ⚠️ **참고**: 이 문서는 **최초 구현 계획** 기준이라 아래 파일 경로(`entity/`, `service/`,
+> `controller/`, `repository/`)는 계층형 구조 시절의 것이다. 이후 Hexagonal 구조로
+> 리팩토링되어 현재 패키지는 `domain/` · `application/` · `adapter/` · `common/` 이다.
+> 현재 구조와 결정 근거는 [README](../README.md#아키텍처-핵심)와 LLM Wiki의 `ADR-0002`를 참조.
+
 ## Phase 1 — 회원 관리 + JWT
 
 ---
